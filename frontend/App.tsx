@@ -72,7 +72,7 @@ function DashboardScreen({ navigation }: any) {
   const { expenses, loading, error, refresh, remove } = useExpenseStore()
   const totals = useMemo(() => totalsFor(expenses), [expenses])
   const categories = useMemo(() => categoryTotals(expenses), [expenses])
-  const confirmDelete = (expense: Expense) => Alert.alert('Delete expense?', `${expense.description} will be permanently removed.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: () => void remove(expense.id).catch(cause => Alert.alert('Unable to delete', cause instanceof Error ? cause.message : 'Try again.')) }])
+  const confirmDelete = (expense: Expense) => confirmExpenseDeletion(expense, remove)
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.screen}><ScreenHeader eyebrow="SPENDING OVERVIEW" title="Your month at a glance" onAdd={() => navigation.navigate('AddExpense')} /><LoadError error={error} onRetry={refresh} />
     {loading ? <LoadingScreen label="Loading expenses..." /> : <><View style={styles.summaryGrid}><Summary label="Total expenses" amount={money(totals.total)} icon="wallet-outline" tone="#dbeafe" /><Summary label="Needs" amount={money(totals.needs)} icon="checkmark-circle-outline" tone="#dcfce7" /><Summary label="Wants" amount={money(totals.wants)} icon="heart-outline" tone="#ffedd5" /></View>
     <Section title="Spending by category">{categories.length ? categories.slice(0, 5).map(({ category, amount }) => <CategoryRow key={category} category={category} amount={amount} maximum={categories[0].amount} />) : <EmptyCompact label="No spending recorded yet." />}</Section>
@@ -85,7 +85,7 @@ function ExpensesScreen({ navigation }: any) {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<ExpenseCategory | 'All'>('All')
   const visible = expenses.filter(expense => (category === 'All' || expense.category === category) && `${expense.description} ${expense.category}`.toLowerCase().includes(query.toLowerCase()))
-  const confirmDelete = (expense: Expense) => Alert.alert('Delete expense?', `${expense.description} will be permanently removed.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: () => void remove(expense.id).catch(cause => Alert.alert('Unable to delete', cause instanceof Error ? cause.message : 'Try again.')) }])
+  const confirmDelete = (expense: Expense) => confirmExpenseDeletion(expense, remove)
   return <SafeAreaView style={styles.safe}><View style={styles.screen}><ScreenHeader eyebrow="ALL TRANSACTIONS" title="Your expenses" onAdd={() => navigation.navigate('AddExpense')} /><TextInput value={query} onChangeText={setQuery} placeholder="Search expenses" placeholderTextColor="#94a3b8" style={styles.search} /><ScrollView horizontal style={styles.chipsScroller} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>{(['All', ...expenseCategories] as const).map(value => <Pressable key={value} onPress={() => setCategory(value)} style={[styles.chip, category === value && styles.chipActive]}><Text style={[styles.chipText, category === value && styles.chipTextActive]}>{value}</Text></Pressable>)}</ScrollView><LoadError error={error} onRetry={refresh} />
   {loading ? <LoadingScreen label="Loading expenses..." /> : visible.length ? <FlatList data={visible} keyExtractor={item => item.id} renderItem={({ item }) => <ExpenseRow expense={item} onDelete={() => confirmDelete(item)} />} contentContainerStyle={styles.list} /> : <EmptyState onAdd={() => navigation.navigate('AddExpense')} />}</View></SafeAreaView>
 }
@@ -142,6 +142,15 @@ function CategoryRow({ category, amount, maximum }: { category: ExpenseCategory;
 function Legend({ label, amount, color }: { label: string; amount: number; color: string }) { return <View style={styles.legendRow}><View style={[styles.dot, { backgroundColor: color }]} /><Text style={styles.legendText}>{label}</Text><Text style={styles.legendAmount}>{money(amount)}</Text></View> }
 function ExpenseItems({ expenses, onDelete }: { expenses: Expense[]; onDelete?: (expense: Expense) => void }) { return expenses.length ? <View>{expenses.map(expense => <ExpenseRow key={expense.id} expense={expense} onDelete={onDelete ? () => onDelete(expense) : undefined} />)}</View> : <EmptyCompact label="No expenses yet." /> }
 function ExpenseRow({ expense, onDelete }: { expense: Expense; onDelete?: () => void }) { return <View style={styles.expense}><View style={styles.expenseIcon}><Ionicons name={categoryIcons[expense.category]} size={19} color={colors.blue} /></View><View style={styles.expenseCopy}><Text style={styles.expenseDescription} numberOfLines={1}>{expense.description}</Text><Text style={styles.expenseMeta}>{expense.category} · {dateLabel(expense.date)}</Text></View><View><Text style={[styles.badge, expense.type === 'Need' ? styles.need : styles.want]}>{expense.type}</Text><Text style={styles.expenseAmount}>{money(expense.amount)}</Text></View>{onDelete && <Pressable accessibilityLabel={`Delete ${expense.description}`} onPress={onDelete} hitSlop={8}><Ionicons name="trash-outline" size={19} color="#dc2626" /></Pressable>}</View> }
+function confirmExpenseDeletion(expense: Expense, remove: (id: string) => Promise<void>) {
+  const message = `${expense.description} will be permanently removed.`
+  const deleteNow = () => void remove(expense.id).catch(cause => Alert.alert('Unable to delete', cause instanceof Error ? cause.message : 'Try again.'))
+  if (Platform.OS === 'web') {
+    if (window.confirm(`Delete expense?\n\n${message}`)) deleteNow()
+    return
+  }
+  Alert.alert('Delete expense?', message, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: deleteNow }])
+}
 function DateField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const [open, setOpen] = useState(false)
   const [typed, setTyped] = useState(dateToDisplay(value))
