@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { Alert, FlatList, Image, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { NavigationContainer, type NavigatorScreenParams } from '@react-navigation/native'
+import { DarkTheme, DefaultTheme, NavigationContainer, type NavigatorScreenParams } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import type { Session } from '@supabase/supabase-js'
@@ -23,7 +23,25 @@ WebBrowser.maybeCompleteAuthSession()
 const colors = { blue: '#2563eb', ink: '#0f172a', muted: '#64748b', border: '#e2e8f0', page: '#f8fafc', white: '#ffffff', green: '#16a34a', orange: '#ea580c' }
 const categoryIcons: Record<ExpenseCategory, keyof typeof Ionicons.glyphMap> = { Food: 'restaurant-outline', Transport: 'bus-outline', Education: 'book-outline', 'Rent/Hostel': 'home-outline', 'Mobile/Internet': 'phone-portrait-outline', Shopping: 'bag-outline', Entertainment: 'film-outline', Personal: 'person-outline', Subscriptions: 'repeat-outline', Other: 'ellipsis-horizontal-circle-outline' }
 const money = (amount: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount)
-const dateLabel = (date: string) => new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${date}T00:00:00`))
+const dateLabel = (date: string) => {
+  const [year, month, day] = date.slice(0, 10).split('-')
+  return `${day}-${month}-${year}`
+}
+const dateToDisplay = (date: string) => {
+  const [year, month, day] = date.split('-')
+  return `${day}-${month}-${year}`
+}
+const displayToDate = (date: string) => {
+  const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(date)
+  if (!match) return null
+  const [, day, month, year] = match
+  const parsed = new Date(`${year}-${month}-${day}T00:00:00`)
+  return Number.isNaN(parsed.getTime()) || parsed.getDate() !== Number(day) || parsed.getMonth() !== Number(month) - 1 ? null : `${year}-${month}-${day}`
+}
+
+type ThemeState = { dark: boolean; toggle: () => void }
+const ThemeContext = createContext<ThemeState>({ dark: false, toggle: () => undefined })
+const useTheme = () => useContext(ThemeContext)
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null)
@@ -40,11 +58,14 @@ export default function App() {
 }
 
 function AppNavigator() {
-  return <ExpenseProvider><NavigationContainer><StatusBar style="dark" /><Stack.Navigator><Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} /><Stack.Screen name="AddExpense" component={AddExpenseScreen} options={{ presentation: 'modal', title: 'Add expense' }} /></Stack.Navigator></NavigationContainer></ExpenseProvider>
+  const [dark, setDark] = useState(false)
+  const theme = { dark, toggle: () => setDark(current => !current) }
+  return <ThemeContext.Provider value={theme}><ExpenseProvider><NavigationContainer theme={{ ...(dark ? DarkTheme : DefaultTheme), colors: { ...(dark ? DarkTheme : DefaultTheme).colors, primary: colors.blue, background: dark ? '#0f172a' : colors.page, card: dark ? '#172033' : colors.white, text: dark ? '#f8fafc' : colors.ink, border: dark ? '#334155' : colors.border, notification: colors.blue } }}><StatusBar style={dark ? 'light' : 'dark'} /><Stack.Navigator screenOptions={{ contentStyle: { backgroundColor: dark ? '#0f172a' : colors.page } }}><Stack.Screen name="Tabs" options={{ headerShown: false }}>{() => <TabNavigator />}</Stack.Screen><Stack.Screen name="AddExpense" component={AddExpenseScreen} options={{ presentation: 'modal', title: 'Add expense' }} /></Stack.Navigator></NavigationContainer></ExpenseProvider></ThemeContext.Provider>
 }
 
 function TabNavigator() {
-  return <Tabs.Navigator screenOptions={({ route }) => ({ headerStyle: { backgroundColor: colors.white }, headerShadowVisible: false, headerTitleStyle: { fontWeight: '700' }, tabBarActiveTintColor: colors.blue, tabBarInactiveTintColor: '#94a3b8', tabBarStyle: { borderTopColor: colors.border, height: 62 }, tabBarIcon: ({ color, size }) => <Ionicons name={route.name === 'Dashboard' ? 'grid-outline' : 'receipt-outline'} color={color} size={size} /> })}><Tabs.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Spendly' }} /><Tabs.Screen name="Expenses" component={ExpensesScreen} options={{ title: 'Expenses' }} /></Tabs.Navigator>
+  const { dark } = useTheme()
+  return <Tabs.Navigator screenOptions={({ route }) => ({ headerStyle: { backgroundColor: dark ? '#172033' : colors.white }, headerShadowVisible: false, headerTitle: () => <Brand />, headerRight: () => <HeaderActions />, tabBarActiveTintColor: colors.blue, tabBarInactiveTintColor: dark ? '#94a3b8' : '#94a3b8', tabBarStyle: { backgroundColor: dark ? '#172033' : colors.white, borderTopColor: dark ? '#334155' : colors.border, height: 62 }, tabBarIcon: ({ color, size }) => <Ionicons name={route.name === 'Dashboard' ? 'grid-outline' : 'receipt-outline'} color={color} size={size} /> })}><Tabs.Screen name="Dashboard" component={DashboardScreen} /><Tabs.Screen name="Expenses" component={ExpensesScreen} /></Tabs.Navigator>
 }
 
 function DashboardScreen({ navigation }: any) {
@@ -73,10 +94,10 @@ function AddExpenseScreen({ navigation }: any) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10)); const [category, setCategory] = useState<ExpenseCategory>('Food'); const [description, setDescription] = useState(''); const [amount, setAmount] = useState(''); const [type, setType] = useState<ExpenseType>('Need'); const [saving, setSaving] = useState(false)
   const save = async () => {
     const numericAmount = Number(amount)
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !description.trim() || !Number.isFinite(numericAmount) || numericAmount <= 0) { Alert.alert('Check your details', 'Enter a date, description, and amount greater than zero.'); return }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !description.trim() || !Number.isFinite(numericAmount) || numericAmount <= 0) { Alert.alert('Check your details', 'Choose a date, description, and amount greater than zero.'); return }
     setSaving(true); try { await add({ date, category, description: description.trim(), amount: numericAmount, type } satisfies NewExpense); navigation.goBack() } catch (cause) { Alert.alert('Unable to save', cause instanceof Error ? cause.message : 'Try again.') } finally { setSaving(false) }
   }
-  return <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}><ScrollView contentContainerStyle={styles.form}><Field label="Date (YYYY-MM-DD)" value={date} onChangeText={setDate} keyboardType="numbers-and-punctuation" /><Text style={styles.fieldLabel}>Category</Text><ScrollView horizontal style={styles.chipsScroller} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>{expenseCategories.map(value => <Pressable key={value} onPress={() => setCategory(value)} style={[styles.chip, category === value && styles.chipActive]}><Text style={[styles.chipText, category === value && styles.chipTextActive]}>{value}</Text></Pressable>)}</ScrollView><Field label="Description" value={description} onChangeText={setDescription} placeholder="What did you spend on?" /><Field label="Amount (INR)" value={amount} onChangeText={setAmount} placeholder="0" keyboardType="decimal-pad" /><Text style={styles.fieldLabel}>Expense type</Text><View style={styles.typeRow}>{(['Need', 'Want'] as const).map(value => <Pressable key={value} onPress={() => setType(value)} style={[styles.typeButton, type === value && styles.typeButtonSelected]}><Text style={[styles.typeText, type === value && styles.typeTextSelected]}>{value}</Text></Pressable>)}</View><Pressable onPress={() => void save()} disabled={saving} style={[styles.primary, saving && styles.disabled]}><Text style={styles.primaryText}>{saving ? 'Saving...' : 'Save expense'}</Text></Pressable></ScrollView></KeyboardAvoidingView>
+  return <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}><ScrollView contentContainerStyle={styles.form}><DateField value={date} onChange={setDate} /><Text style={styles.fieldLabel}>Category</Text><ScrollView horizontal style={styles.chipsScroller} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>{expenseCategories.map(value => <Pressable key={value} onPress={() => setCategory(value)} style={[styles.chip, category === value && styles.chipActive]}><Text style={[styles.chipText, category === value && styles.chipTextActive]}>{value}</Text></Pressable>)}</ScrollView><Field label="Description" value={description} onChangeText={setDescription} placeholder="What did you spend on?" /><Field label="Amount (INR)" value={amount} onChangeText={setAmount} placeholder="0" keyboardType="decimal-pad" /><Text style={styles.fieldLabel}>Expense type</Text><View style={styles.typeRow}>{(['Need', 'Want'] as const).map(value => <Pressable key={value} onPress={() => setType(value)} style={[styles.typeButton, type === value && styles.typeButtonSelected]}><Text style={[styles.typeText, type === value && styles.typeTextSelected]}>{value}</Text></Pressable>)}</View><Pressable onPress={() => void save()} disabled={saving} style={[styles.primary, saving && styles.disabled]}><Text style={styles.primaryText}>{saving ? 'Saving...' : 'Save expense'}</Text></Pressable></ScrollView></KeyboardAvoidingView>
 }
 
 function AuthScreen() {
@@ -110,6 +131,9 @@ function AuthScreen() {
 
 function SocialButton({ label, icon, onPress, disabled }: { label: string; icon: keyof typeof Ionicons.glyphMap; onPress: () => void; disabled: boolean }) { return <Pressable onPress={onPress} disabled={disabled} style={[styles.socialButton, disabled && styles.disabled]}><Ionicons name={icon} size={19} color={colors.ink} /><Text style={styles.socialText}>{label}</Text></Pressable> }
 
+function Brand() { return <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Image source={require('./assets/spendly-logo.png')} style={{ width: 28, height: 28 }} resizeMode="contain" accessibilityLabel="Spendly logo" /><Text style={{ color: colors.ink, fontSize: 19, fontWeight: '800' }}>Spendly</Text></View> }
+function HeaderActions() { const { dark, toggle } = useTheme(); const [open, setOpen] = useState(false); const logout = async () => { setOpen(false); const { error } = await supabase.auth.signOut(); if (error) Alert.alert('Unable to log out', error.message) }; return <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginRight: 14, position: 'relative' }}><Pressable accessibilityLabel="Toggle dark mode" onPress={toggle} style={{ padding: 6 }}><Ionicons name={dark ? 'sunny-outline' : 'moon-outline'} size={20} color={dark ? '#f8fafc' : colors.ink} /></Pressable><Pressable accessibilityLabel="Profile and account options" onPress={() => setOpen(value => !value)} style={{ width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: 16 }}><Ionicons name="person-outline" size={20} color={dark ? '#f8fafc' : colors.ink} /></Pressable>{open && <View style={{ position: 'absolute', right: 0, top: 42, width: 118, backgroundColor: dark ? '#172033' : colors.white, borderColor: colors.border, borderWidth: 1, borderRadius: 8, padding: 5, zIndex: 20, elevation: 8 }}><Pressable onPress={() => void logout()} style={{ flexDirection: 'row', gap: 7, alignItems: 'center', padding: 9 }}><Ionicons name="log-out-outline" size={18} color="#dc2626" /><Text style={{ color: '#dc2626', fontWeight: '700' }}>Log out</Text></Pressable></View>}</View> }
+
 function ScreenHeader({ eyebrow, title, onAdd }: { eyebrow: string; title: string; onAdd: () => void }) { return <View style={styles.header}><View><Text style={styles.eyebrow}>{eyebrow}</Text><Text style={styles.title}>{title}</Text></View><Pressable accessibilityLabel="Add expense" onPress={onAdd} style={styles.iconButton}><Ionicons name="add" size={24} color={colors.white} /></Pressable></View> }
 function Section({ title, action, onAction, children }: { title: string; action?: string; onAction?: () => void; children: React.ReactNode }) { return <View style={styles.section}><View style={styles.sectionTitle}><Text style={styles.sectionHeading}>{title}</Text>{action && <Pressable onPress={onAction}><Text style={styles.action}>{action}</Text></Pressable>}</View>{children}</View> }
 function Summary({ label, amount, icon, tone }: { label: string; amount: string; icon: keyof typeof Ionicons.glyphMap; tone: string }) { return <View style={styles.summary}><View style={[styles.summaryIcon, { backgroundColor: tone }]}><Ionicons name={icon} size={19} color={colors.blue} /></View><Text style={styles.summaryLabel}>{label}</Text><Text style={styles.summaryAmount}>{amount}</Text></View> }
@@ -117,6 +141,19 @@ function CategoryRow({ category, amount, maximum }: { category: ExpenseCategory;
 function Legend({ label, amount, color }: { label: string; amount: number; color: string }) { return <View style={styles.legendRow}><View style={[styles.dot, { backgroundColor: color }]} /><Text style={styles.legendText}>{label}</Text><Text style={styles.legendAmount}>{money(amount)}</Text></View> }
 function ExpenseItems({ expenses }: { expenses: Expense[] }) { return expenses.length ? <View>{expenses.map(expense => <ExpenseRow key={expense.id} expense={expense} />)}</View> : <EmptyCompact label="No expenses yet." /> }
 function ExpenseRow({ expense, onDelete }: { expense: Expense; onDelete?: () => void }) { return <View style={styles.expense}><View style={styles.expenseIcon}><Ionicons name={categoryIcons[expense.category]} size={19} color={colors.blue} /></View><View style={styles.expenseCopy}><Text style={styles.expenseDescription} numberOfLines={1}>{expense.description}</Text><Text style={styles.expenseMeta}>{expense.category} · {dateLabel(expense.date)}</Text></View><View><Text style={[styles.badge, expense.type === 'Need' ? styles.need : styles.want]}>{expense.type}</Text><Text style={styles.expenseAmount}>{money(expense.amount)}</Text></View>{onDelete && <Pressable accessibilityLabel={`Delete ${expense.description}`} onPress={onDelete} hitSlop={8}><Ionicons name="trash-outline" size={19} color="#dc2626" /></Pressable>}</View> }
+function DateField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const [typed, setTyped] = useState(dateToDisplay(value))
+  const [month, setMonth] = useState(() => new Date(`${value}T00:00:00`))
+  useEffect(() => setTyped(dateToDisplay(value)), [value])
+  const commitTyped = () => { const parsed = displayToDate(typed); if (parsed) { onChange(parsed); setMonth(new Date(`${parsed}T00:00:00`)) } else setTyped(dateToDisplay(value)) }
+  const firstDay = new Date(month.getFullYear(), month.getMonth(), 1).getDay()
+  const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate()
+  const cells = Array.from({ length: firstDay + days }, (_, index) => index < firstDay ? null : index - firstDay + 1)
+  const selected = (day: number) => `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+  const dayStyle = { width: '14.2857%' as const, height: 34, alignItems: 'center' as const, justifyContent: 'center' as const, borderRadius: 17 }
+  return <View><Text style={styles.fieldLabel}>Date (DD-MM-YYYY)</Text><View style={{ flexDirection: 'row', gap: 8 }}><TextInput value={typed} onChangeText={setTyped} onBlur={commitTyped} placeholder="DD-MM-YYYY" placeholderTextColor="#94a3b8" keyboardType="numbers-and-punctuation" maxLength={10} style={[styles.input, { flex: 1 }]} /><Pressable accessibilityLabel="Choose expense date" onPress={() => setOpen(current => !current)} style={{ width: 46, borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white }}><Ionicons name="calendar-outline" size={21} color={colors.blue} /></Pressable></View>{open && <View style={{ marginTop: 8, borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 10, backgroundColor: colors.white }}><View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}><Pressable accessibilityLabel="Previous month" onPress={() => setMonth(current => new Date(current.getFullYear(), current.getMonth() - 1, 1))}><Ionicons name="chevron-back" size={20} color={colors.ink} /></Pressable><Text style={{ color: colors.ink, fontWeight: '700' }}>{month.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</Text><Pressable accessibilityLabel="Next month" onPress={() => setMonth(current => new Date(current.getFullYear(), current.getMonth() + 1, 1))}><Ionicons name="chevron-forward" size={20} color={colors.ink} /></Pressable></View><View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>{['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => <Text key={`${day}-${index}`} style={{ width: '14.2857%', textAlign: 'center', color: colors.muted, fontSize: 12, paddingBottom: 5 }}>{day}</Text>)}{cells.map((day, index) => day ? <Pressable key={index} onPress={() => { onChange(selected(day)); setOpen(false) }} style={[dayStyle, value === selected(day) && { backgroundColor: colors.blue }]}><Text style={{ color: value === selected(day) ? colors.white : colors.ink, fontWeight: value === selected(day) ? '700' : '400' }}>{day}</Text></Pressable> : <View key={index} style={dayStyle} />)}</View></View>}</View>
+}
 function Field(props: { label: string; value: string; onChangeText: (value: string) => void; placeholder?: string; keyboardType?: 'default' | 'email-address' | 'decimal-pad' | 'numbers-and-punctuation'; secureTextEntry?: boolean; autoCapitalize?: 'none' | 'sentences' }) { const { label, ...inputProps } = props; return <View><Text style={styles.fieldLabel}>{label}</Text><TextInput style={styles.input} placeholderTextColor="#94a3b8" {...inputProps} /></View> }
 function LoadError({ error, onRetry }: { error: string | null; onRetry: () => void }) { return error ? <View style={styles.error}><Text style={styles.errorText}>{error}</Text><Pressable onPress={onRetry}><Text style={styles.action}>Retry</Text></Pressable></View> : null }
 function LoadingScreen({ label }: { label: string }) { return <View style={styles.loading}><Text style={styles.muted}>{label}</Text></View> }

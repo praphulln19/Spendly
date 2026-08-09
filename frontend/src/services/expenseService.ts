@@ -14,6 +14,9 @@ export async function createExpense(expense: NewExpense): Promise<Expense> {
 }
 
 export async function deleteExpense(id: string): Promise<void> {
-  const { error } = await supabase.from('expenses').delete().eq('id', id)
+  // Request the deleted row back.  Without this, PostgREST can report a
+  // successful request even when row-level security filtered the row out.
+  const { data, error } = await supabase.from('expenses').delete().eq('id', id).select('id').maybeSingle()
   if (error) throw error
+  if (!data) throw new Error('This expense could not be deleted. Please refresh and try again.')
 }
