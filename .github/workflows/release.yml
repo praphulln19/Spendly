@@ -3,6 +3,7 @@ name: Build and release Spendly
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -15,26 +16,68 @@ jobs:
       EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
     steps:
       - uses: actions/checkout@v4
+
+      - id: meta
+        shell: bash
+        run: |
+          DATE=$(date +'%Y%m%d')
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+          echo "release_name=Spendly build ${DATE} #${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
       - name: Install dependencies
         working-directory: frontend
         run: npm ci
+
       - name: Type-check the app
         working-directory: frontend
         run: npm run typecheck
+
       - name: Export the web app
         working-directory: frontend
         run: npm run build:web
+
       - name: Package the web build
-        run: cd frontend && zip -r ../spendly-web-${{ github.run_number }}.zip dist
+        run: |
+          mkdir -p dist-artifacts
+          cd frontend
+          zip -r ../dist-artifacts/spendly-web-${{ steps.meta.outputs.date }}-${{ github.run_number }}.zip dist
+
+      - name: Prebuild Android project
+        working-directory: frontend
+        run: npx expo prebuild --platform android --clean
+
+      - name: Build Android APK
+        working-directory: frontend/android
+        run: |
+          ./gradlew assembleDebug
+          mkdir -p ../dist-artifacts
+          cp app/build/outputs/apk/debug/app-debug.apk ../dist-artifacts/spendly-android-${{ steps.meta.outputs.date }}-${{ github.run_number }}.apk
+
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: web-v${{ github.run_number }}
-          name: Spendly web build ${{ github.run_number }}
+          tag_name: spendly-${{ steps.meta.outputs.date }}-${{ github.run_number }}
+          name: ${{ steps.meta.outputs.release_name }}
           generate_release_notes: true
-          files: spendly-web-${{ github.run_number }}.zip
+          files: |
+            dist-artifacts/spendly-web-${{ steps.meta.outputs.date }}-${{ github.run_number }}.zip
+            dist-artifacts/spendly-android-${{ steps.meta.outputs.date }}-${{ github.run_number }}.apk
