@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, X, Share, CheckCircle2 } from 'lucide-react';
+import { Download, X, Share, CheckCircle2, Wallet } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -15,9 +15,23 @@ export function PWAPrompt() {
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [installed, setInstalled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // 1. Register Service Worker
+    // 1. Check if device is Mobile (phones / tablets)
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const mobileCheck =
+      /iphone|ipad|ipod|android|blackberry|iemobile|opera mini|mobile/i.test(userAgent) ||
+      window.innerWidth < 768;
+
+    setIsMobile(mobileCheck);
+
+    // If not mobile, do not initialize or show PWA prompt on desktop!
+    if (!mobileCheck) {
+      return;
+    }
+
+    // 2. Register Service Worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
         .register('/sw.js')
@@ -29,23 +43,21 @@ export function PWAPrompt() {
         });
     }
 
-    // 2. Check if already running in standalone mode
+    // 3. Check if already running in standalone mode
     const isStandaloneMode =
       window.matchMedia('(display-mode: standalone)').matches ||
       (navigator as unknown as { standalone?: boolean }).standalone === true;
 
     setIsStandalone(isStandaloneMode);
-
     if (isStandaloneMode) {
-      return; // No prompt needed if already installed & running standalone
+      return;
     }
 
-    // 3. Check for iOS device
-    const userAgent = window.navigator.userAgent.toLowerCase();
+    // 4. Check for iOS device
     const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
     setIsIOS(isIosDevice);
 
-    // 4. Check if dismissed recently (e.g. within 3 days)
+    // 5. Check if dismissed recently
     const lastDismissed = localStorage.getItem('spendly_pwa_prompt_dismissed');
     if (lastDismissed) {
       const dismissedTime = parseInt(lastDismissed, 10);
@@ -55,7 +67,7 @@ export function PWAPrompt() {
       }
     }
 
-    // 5. Listen for beforeinstallprompt event (Android / Chrome / Edge)
+    // 6. Listen for beforeinstallprompt event (Android / Chrome Mobile)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -64,11 +76,11 @@ export function PWAPrompt() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // If iOS Safari, show prompt after a short delay
+    // If iOS Safari on mobile, show iOS prompt after 3s
     if (isIosDevice) {
       const timer = setTimeout(() => {
         setShowPrompt(true);
-      }, 3000);
+      }, 2500);
       return () => clearTimeout(timer);
     }
 
@@ -107,7 +119,8 @@ export function PWAPrompt() {
     localStorage.setItem('spendly_pwa_prompt_dismissed', Date.now().toString());
   };
 
-  if (!showPrompt || isStandalone) return null;
+  // Only render on mobile devices and when prompt is triggered
+  if (!isMobile || !showPrompt || isStandalone) return null;
 
   return (
     <AnimatePresence>
@@ -116,23 +129,19 @@ export function PWAPrompt() {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 50, scale: 0.95 }}
         transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-        className="fixed bottom-20 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-[100]"
+        className="fixed bottom-20 left-4 right-4 max-w-sm mx-auto z-[100]"
       >
-        <div className="apple-glass rounded-3xl p-4 sm:p-5 shadow-2xl border border-black/10 dark:border-white/15 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-3xl">
+        <div className="apple-glass rounded-3xl p-4 shadow-2xl border border-black/10 dark:border-white/15 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-3xl">
+          {/* Header */}
           <div className="flex items-start justify-between gap-3">
-            {/* Logo & Title Info */}
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-black dark:bg-white flex items-center justify-center text-white dark:text-black shadow-lg shrink-0">
-                <svg className="w-6 h-6 fill-current" viewBox="0 0 512 512">
-                  <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" stroke="currentColor" strokeWidth="32" strokeLinecap="round" fill="none" />
-                  <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" stroke="currentColor" strokeWidth="32" strokeLinecap="round" fill="none" />
-                  <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" stroke="currentColor" strokeWidth="32" strokeLinecap="round" fill="none" />
-                </svg>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-black dark:bg-white flex items-center justify-center text-white dark:text-black shadow-md shrink-0">
+                <Wallet className="w-5 h-5" />
               </div>
 
               <div>
                 <h4 className="text-sm font-bold font-display text-neutral-900 dark:text-white flex items-center gap-1.5">
-                  <span>Install Spendly App</span>
+                  <span>{isIOS ? 'Add Spendly to Home Screen' : 'Install Spendly App'}</span>
                   {installed && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
                 </h4>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
@@ -141,39 +150,52 @@ export function PWAPrompt() {
               </div>
             </div>
 
-            {/* Close Button */}
             <button
               onClick={handleDismiss}
-              className="p-1.5 rounded-full text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              className="p-1 rounded-full text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
               aria-label="Close prompt"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Action Row */}
-          <div className="mt-3.5 flex items-center justify-end gap-2.5">
-            <button
-              onClick={handleDismiss}
-              className="px-3.5 py-2 text-xs font-semibold text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
-            >
-              Later
-            </button>
+          {/* Body Instructions / Actions */}
+          <div className="mt-4 pt-3 border-t border-black/5 dark:border-white/10">
+            {isIOS ? (
+              // iOS Specific Guidance
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2 p-2.5 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-semibold">
+                  <Share className="w-4 h-4 shrink-0" />
+                  <span>
+                    Tap the <strong>Share</strong> button in Safari, then select <strong>'Add to Home Screen'</strong>.
+                  </span>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleDismiss}
+                    className="px-4 py-2 text-xs font-bold rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm"
+                  >
+                    Got It
+                  </button>
+                </div>
+              </div>
+            ) : (
+              // Android Direct Install Action
+              <div className="flex items-center justify-end gap-2.5">
+                <button
+                  onClick={handleDismiss}
+                  className="px-3.5 py-2 text-xs font-semibold text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                >
+                  Later
+                </button>
 
-            {deferredPrompt && (
-              <button
-                onClick={handleInstallClick}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-md"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Install Now</span>
-              </button>
-            )}
-
-            {isIOS && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold">
-                <Share className="w-3.5 h-3.5" />
-                <span>Tap Share & 'Add to Home Screen'</span>
+                <button
+                  onClick={handleInstallClick}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-md"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Install Now</span>
+                </button>
               </div>
             )}
           </div>

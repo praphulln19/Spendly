@@ -16,7 +16,6 @@ import {
   Sun,
   LogOut,
   User as UserIcon,
-  Sparkles,
   Menu,
   X,
 } from 'lucide-react';
@@ -58,7 +57,7 @@ export function AppleNavbar({
   return (
     <header className="sticky top-0 z-40 px-3 py-2 sm:px-8 sm:py-3">
       <div className="max-w-7xl mx-auto apple-glass rounded-2xl sm:rounded-3xl px-3.5 py-2 sm:px-5 sm:py-3 flex items-center justify-between transition-all duration-300 relative">
-        {/* Brand & Desktop Navigation */}
+        {/* Brand */}
         <div className="flex items-center gap-4 lg:gap-8">
           <Link href="/" className="flex items-center gap-2.5 group shrink-0">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-black dark:bg-white flex items-center justify-center text-white dark:text-black shadow-md group-hover:scale-105 transition-transform duration-200">
@@ -69,9 +68,9 @@ export function AppleNavbar({
             </span>
           </Link>
 
-          {/* Desktop Navigation Tabs (LG screens >= 1024px) */}
+          {/* Desktop Navigation Tabs (MD & UP >= 768px) */}
           {session && (
-            <nav className="apple-segmented-container hidden lg:flex">
+            <nav className="apple-segmented-container hidden md:flex">
               <Link href="/" className="relative">
                 <span
                   className={`apple-segmented-button flex items-center gap-2 ${
@@ -120,7 +119,6 @@ export function AppleNavbar({
           {/* Desktop Budget Badge */}
           {session && (
             <div className="hidden xl:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-2xl bg-black/5 dark:bg-white/10 text-neutral-700 dark:text-neutral-300">
-              <Sparkles className="w-3.5 h-3.5 text-blue-500" />
               <span>
                 Budget:{' '}
                 <strong className={isOverBudget ? 'text-red-500' : 'text-emerald-500'}>
@@ -134,14 +132,14 @@ export function AppleNavbar({
           {session && onOpenAddExpense && (
             <button
               onClick={onOpenAddExpense}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl sm:rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm"
+              className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl sm:rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm"
             >
               <Plus className="w-4 h-4" />
               <span>Add Expense</span>
             </button>
           )}
 
-          {/* Theme Toggle Button */}
+          {/* Theme Toggle Button (Always visible) */}
           <button
             onClick={toggleTheme}
             className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl border border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/10 flex items-center justify-center text-neutral-800 dark:text-neutral-200 hover:scale-105 active:scale-95 transition-all"
@@ -152,9 +150,9 @@ export function AppleNavbar({
             </motion.div>
           </button>
 
-          {/* Desktop Profile Dropdown (SM & up) */}
+          {/* Desktop Profile Dropdown (MD & up) */}
           {session && (
-            <div className="relative hidden sm:block">
+            <div className="relative hidden md:block">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl border border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/10 flex items-center justify-center text-neutral-800 dark:text-neutral-200 hover:scale-105 transition-all"
@@ -191,11 +189,11 @@ export function AppleNavbar({
             </div>
           )}
 
-          {/* Mobile Hamburger Menu Button (LG screen < 1024px) */}
+          {/* Mobile Hamburger Menu Button (< 768px) */}
           {session && (
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl border border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/10 flex items-center justify-center text-neutral-800 dark:text-neutral-200 hover:scale-105 active:scale-95 transition-all"
+              className="md:hidden w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl border border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/10 flex items-center justify-center text-neutral-800 dark:text-neutral-200 hover:scale-105 active:scale-95 transition-all"
               aria-label="Toggle mobile menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5 text-red-500" /> : <Menu className="w-5 h-5" />}
@@ -213,7 +211,7 @@ export function AppleNavbar({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -15, scale: 0.98 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="lg:hidden max-w-7xl mx-auto mt-2 apple-glass rounded-2xl p-4 shadow-2xl border border-black/10 dark:border-white/15 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-3xl flex flex-col gap-3"
+              className="md:hidden max-w-7xl mx-auto mt-2 apple-glass rounded-2xl p-4 shadow-2xl border border-black/10 dark:border-white/15 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-3xl flex flex-col gap-3"
             >
               {/* User Account Info */}
               <div className="flex items-center justify-between p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
@@ -230,9 +228,8 @@ export function AppleNavbar({
                 </div>
 
                 <div className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-xl bg-black/5 dark:bg-white/10 shrink-0">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-500" />
                   <span className={isOverBudget ? 'text-red-500' : 'text-emerald-500'}>
-                    ₹{remainingBudget.toLocaleString('en-IN')} left
+                    Budget: ₹{remainingBudget.toLocaleString('en-IN')} left
                   </span>
                 </div>
               </div>
