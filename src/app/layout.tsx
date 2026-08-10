@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import './globals.css';
 import { ThemeProvider } from '../context/ThemeProvider';
 import { ExpenseProvider } from '../hooks/useExpenses';
 import { PWAPrompt } from '../components/PWAPrompt';
 
 export const metadata: Metadata = {
-  title: 'Spendly | Student Expense Tracker',
-  description: 'A modern mobile and web expense-tracking app for students, built with Next.js 15, React 19, and Supabase.',
+  title: 'Spendly | Personal Expense Tracker',
+  description: 'A modern mobile and web expense-tracking app built with Next.js 15, React 19, and Supabase.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -40,6 +41,11 @@ export default function RootLayout({
             <PWAPrompt />
           </ExpenseProvider>
         </ThemeProvider>
+        <Script
+          src="https://cloud.umami.is/script.js"
+          data-website-id="39202846-ccbc-419f-8dd1-1dc5aa8c802f"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
