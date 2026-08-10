@@ -1,72 +1,56 @@
 # Spendly
 
-A modern expense-tracking web application for students, built with Next.js 15 (App Router), React 19, TypeScript, and Supabase.
+A modern, student-focused expense tracking web application built with **Next.js 15 (App Router)**, **React 19**, **TypeScript**, **Tailwind CSS**, **Framer Motion**, and **Supabase**.
+
+Designed with Apple Human Interface Guidelines and Airbnb-grade monochromatic glassmorphism aesthetics.
 
 ## Features
 
-- Live dashboard totals for all spending, needs, wants, and category breakdown
-- Searchable and filterable transaction list with quick actions
-- Authenticated add and delete expense interactions
-- Persistent Supabase authentication with Google and GitHub OAuth sign-in
-- PostgreSQL row-level security so users can access only their own data
-- Dark mode support and responsive glassmorphism UI
+- **Apple Watch Style Budget Goal Ring**: Monthly budget goal visualizer with live daily allowance limit calculation.
+- **Daily Spending Trends Analytics**: Framer Motion animated bar chart visualizing spending patterns.
+- **Category Breakdown**: Translucent frosted glass cards with glowing progress bars.
+- **Transaction Records Table**: Searchable, filterable list with category pills, date range filters, and CSV data export.
+- **Demo Data Generator**: 1-click sample data loader for immediate testing.
+- **Supabase Authentication**: Google and GitHub OAuth sign-in with row-level security.
+- **Light & Dark Theme**: Apple-style theme toggle.
 
 ## Tech Stack
 
 - Next.js 15 (App Router) & React 19
-- TypeScript & Custom CSS Design System
+- Tailwind CSS & Framer Motion
+- TypeScript & Lucide Icons
 - Supabase Auth & PostgreSQL Database
-- Lucide React Icons
 
-## Run Locally
+## Local Setup
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Copy `.env.example` to `.env.local` and set your Supabase project credentials:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+   ```
 
-## Configure Supabase
+3. Start the Next.js development server:
+   ```bash
+   npm run dev
+   ```
 
-1. Create a Supabase project.
-2. In the Supabase SQL Editor, run [the expense migration](frontend/supabase/migrations/20260808_create_expenses.sql).
-3. Copy `frontend/.env.example` to `frontend/.env.local`.
-4. Set your project credentials:
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-```
+## Available Scripts
 
-## Project Structure
+- `npm run dev` - Start Next.js development server
+- `npm run build` - Build production application bundle
+- `npm start` - Run production server after building
+- `npm run typecheck` - Validate TypeScript types across the app
 
-```text
-frontend/
-|-- src/
-|   |-- app/                            # Next.js App Router (pages, layout, globals.css, auth callback)
-|   |-- components/                     # UI components (Navbar, SummaryCards, ExpenseList, AddExpenseModal, etc.)
-|   |-- context/                        # ThemeProvider for dark/light mode
-|   |-- hooks/                          # Shared expense state and async actions
-|   |-- lib/                            # Supabase client setup
-|   |-- services/                       # Expense CRUD operations
-|   `-- types/                          # TypeScript definitions
-|-- supabase/migrations/                # Database schema and RLS policies
-`-- .env.example                        # Required public environment variables
-```
+## Deploying to Vercel
 
-## Available Commands
-
-From `frontend/`:
-
-```bash
-npm run dev       # Start Next.js development server
-npm run build     # Build production application bundle
-npm start         # Run production server after building
-npm run typecheck # Type-check the app with TypeScript compiler
-```
-
-## Security Notes
-
-Never commit `.env` or `.env.local` containing service-role keys. The client application uses only the public project URL and anon key; database access is enforced by Supabase Row-Level Security (RLS).
+1. Import your GitHub repository into Vercel.
+2. Vercel automatically detects Next.js out-of-the-box (zero configuration needed).
+3. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to Vercel Environment Variables.
+4. Click **Deploy**.
