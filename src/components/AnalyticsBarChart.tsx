@@ -26,51 +26,50 @@ export function AnalyticsBarChart({ expenses }: AnalyticsBarChartProps) {
     amount: dateTotals[date],
   }));
 
-  const maxAmount = Math.max(...chartData.map((d) => d.amount), 1);
+  const maxAmount = Math.max(...chartData.map((d) => d.amount), 100);
   const totalInPeriod = chartData.reduce((acc, d) => acc + d.amount, 0);
   const avgDaily = chartData.length > 0 ? Math.round(totalInPeriod / chartData.length) : 0;
 
-  // Graph dimensions
-  const width = 300;
-  const height = 120;
-  const padding = 20;
+  // Graph canvas dimensions & paddings
+  const width = 340;
+  const height = 160;
+  const paddingLeft = 40;
+  const paddingBottom = 30;
+  const paddingTop = 15;
+  const paddingRight = 20;
+
+  const chartWidth = width - paddingLeft - paddingRight;
+  const chartHeight = height - paddingTop - paddingBottom;
 
   // Compute SVG coordinates for each point
   const points = chartData.map((d, index) => {
     const x =
       chartData.length === 1
-        ? width / 2
-        : padding + (index / (chartData.length - 1)) * (width - 2 * padding);
-    const y = height - padding - (d.amount / maxAmount) * (height - 2 * padding);
+        ? paddingLeft + chartWidth / 2
+        : paddingLeft + (index / (chartData.length - 1)) * chartWidth;
+    const y = paddingTop + chartHeight - (d.amount / maxAmount) * chartHeight;
     return { x, y, ...d };
   });
 
-  // Construct SVG path strings
-  const pathD =
-    points.length > 0
-      ? points.reduce((acc, pt, i) => {
-          if (i === 0) return `M ${pt.x} ${pt.y}`;
-          const prev = points[i - 1];
-          const cx1 = prev.x + (pt.x - prev.x) / 2;
-          const cy1 = prev.y;
-          const cx2 = prev.x + (pt.x - prev.x) / 2;
-          const cy2 = pt.y;
-          return `${acc} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${pt.x} ${pt.y}`;
-        }, '')
-      : '';
+  // Construct straight line path (M x0 y0 L x1 y1 L x2 y2 ...)
+  const linePathD = points.reduce((acc, pt, i) => {
+    return i === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`;
+  }, '');
 
-  const areaD =
-    points.length > 0
-      ? `${pathD} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z`
-      : '';
+  // Grid line Y values
+  const yTicks = [0, 0.33, 0.66, 1].map((ratio) => ({
+    ratio,
+    val: Math.round(maxAmount * ratio),
+    y: paddingTop + chartHeight - ratio * chartHeight,
+  }));
 
   return (
-    <div className="apple-card flex flex-col justify-between h-full min-h-[280px]">
+    <div className="apple-card flex flex-col justify-between h-full min-h-[300px]">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-black/5 dark:bg-white/10 flex items-center justify-center">
-            <LineChart className="w-4 h-4 text-blue-500" />
+          <div className="w-8 h-8 rounded-xl bg-teal-500/10 flex items-center justify-center">
+            <LineChart className="w-4 h-4 text-teal-500" />
           </div>
           <div>
             <h3 className="text-base font-bold font-display text-neutral-900 dark:text-white">
@@ -80,8 +79,8 @@ export function AnalyticsBarChart({ expenses }: AnalyticsBarChartProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-black/5 dark:bg-white/10 text-neutral-700 dark:text-neutral-300">
-          <TrendingUp className="w-3.5 h-3.5 text-blue-500" />
+        <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-400">
+          <TrendingUp className="w-3.5 h-3.5" />
           <span>Avg: ₹{avgDaily.toLocaleString('en-IN')}/day</span>
         </div>
       </div>
@@ -93,50 +92,142 @@ export function AnalyticsBarChart({ expenses }: AnalyticsBarChartProps) {
         </div>
       ) : (
         <div className="flex flex-col flex-1 justify-end">
-          {/* Smooth SVG Line & Area Graph */}
-          <div className="relative w-full h-36">
+          {/* Grid & Line Graph SVG */}
+          <div className="relative w-full h-44">
             <svg
               viewBox={`0 0 ${width} ${height}`}
               className="w-full h-full overflow-visible"
-              preserveAspectRatio="none"
+              preserveAspectRatio="xMidYMid meet"
             >
               <defs>
-                <linearGradient id="spendGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
-                </linearGradient>
+                {/* Arrowhead marker for Y-axis (Up) */}
+                <marker
+                  id="arrowUp"
+                  viewBox="0 0 10 10"
+                  refX="5"
+                  refY="5"
+                  markerWidth="6"
+                  markerHeight="6"
+                  orient="auto-start-reverse"
+                >
+                  <path d="M 0 10 L 5 0 L 10 10 Z" fill="#666666" />
+                </marker>
+
+                {/* Arrowhead marker for X-axis (Right) */}
+                <marker
+                  id="arrowRight"
+                  viewBox="0 0 10 10"
+                  refX="5"
+                  refY="5"
+                  markerWidth="6"
+                  markerHeight="6"
+                  orient="auto"
+                >
+                  <path d="M 0 0 L 10 5 L 0 10 Z" fill="#666666" />
+                </marker>
               </defs>
 
-              {/* Area Fill */}
-              <motion.path
-                d={areaD}
-                fill="url(#spendGradient)"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.8 }}
+              {/* Background Grid Lines (Horizontal & Vertical) */}
+              {yTicks.map((tick) => (
+                <line
+                  key={`y-grid-${tick.ratio}`}
+                  x1={paddingLeft}
+                  y1={tick.y}
+                  x2={width - 10}
+                  y2={tick.y}
+                  stroke="currentColor"
+                  className="text-neutral-200 dark:text-neutral-800"
+                  strokeWidth="1"
+                  strokeDasharray={tick.ratio === 0 ? undefined : '2 2'}
+                />
+              ))}
+
+              {points.map((pt) => (
+                <line
+                  key={`x-grid-${pt.date}`}
+                  x1={pt.x}
+                  y1={paddingTop}
+                  x2={pt.x}
+                  y2={height - paddingBottom}
+                  stroke="currentColor"
+                  className="text-neutral-200 dark:text-neutral-800"
+                  strokeWidth="1"
+                  strokeDasharray="2 2"
+                />
+              ))}
+
+              {/* Main Y-Axis Line (Vertical with Arrow) */}
+              <line
+                x1={paddingLeft}
+                y1={height - paddingBottom + 5}
+                x2={paddingLeft}
+                y2={5}
+                stroke="#666666"
+                strokeWidth="2.5"
+                markerEnd="url(#arrowUp)"
               />
 
-              {/* Smooth Trend Line */}
+              {/* Main X-Axis Line (Horizontal with Arrow) */}
+              <line
+                x1={paddingLeft - 5}
+                y1={height - paddingBottom}
+                x2={width - 5}
+                y2={height - paddingBottom}
+                stroke="#666666"
+                strokeWidth="2.5"
+                markerEnd="url(#arrowRight)"
+              />
+
+              {/* Y-Axis Numerical Labels */}
+              {yTicks.map((tick) => (
+                <text
+                  key={`y-text-${tick.ratio}`}
+                  x={paddingLeft - 8}
+                  y={tick.y + 4}
+                  textAnchor="end"
+                  className="text-[9px] font-bold fill-neutral-500 dark:fill-neutral-400 font-mono"
+                >
+                  {tick.val >= 1000 ? `${(tick.val / 1000).toFixed(1)}k` : tick.val}
+                </text>
+              ))}
+
+              {/* X-Axis Date Ticks */}
+              {points.map((pt) => (
+                <text
+                  key={`x-text-${pt.date}`}
+                  x={pt.x}
+                  y={height - paddingBottom + 16}
+                  textAnchor="middle"
+                  className="text-[9px] font-bold fill-neutral-500 dark:fill-neutral-400"
+                >
+                  {pt.label}
+                </text>
+              ))}
+
+              {/* Connecting Trend Line */}
               <motion.path
-                d={pathD}
+                d={linePathD}
                 fill="none"
-                stroke="#3b82f6"
-                strokeWidth="3"
+                stroke="#06b6d4"
+                strokeWidth="3.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 initial={{ pathLength: 0 }}
                 animate={{ pathLength: 1 }}
-                transition={{ duration: 1, ease: 'easeInOut' }}
+                transition={{ duration: 0.9, ease: 'easeInOut' }}
               />
 
-              {/* Data Points */}
+              {/* Data Point Nodes (Circular rings matching user image) */}
               {points.map((pt, i) => (
-                <g key={pt.date}>
+                <g key={`point-${pt.date}`}>
                   <circle
                     cx={pt.x}
                     cy={pt.y}
-                    r={hoveredIndex === i ? '6' : '4'}
-                    className="fill-blue-500 stroke-white dark:stroke-neutral-900 stroke-2 transition-all duration-200 cursor-pointer"
+                    r={hoveredIndex === i ? '7' : '5.5'}
+                    fill="#ffffff"
+                    stroke="#06b6d4"
+                    strokeWidth="3"
+                    className="transition-all duration-150 cursor-pointer shadow-md"
                     onMouseEnter={() => setHoveredIndex(i)}
                     onMouseLeave={() => setHoveredIndex(null)}
                   />
@@ -148,7 +239,7 @@ export function AnalyticsBarChart({ expenses }: AnalyticsBarChartProps) {
             {points.map((pt, i) => (
               <div
                 key={`tooltip-${pt.date}`}
-                className="absolute transform -translate-x-1/2 cursor-pointer group"
+                className="absolute transform -translate-x-1/2 cursor-pointer"
                 style={{
                   left: `${(pt.x / width) * 100}%`,
                   top: `${(pt.y / height) * 100}%`,
@@ -157,29 +248,13 @@ export function AnalyticsBarChart({ expenses }: AnalyticsBarChartProps) {
                 onMouseLeave={() => setHoveredIndex(null)}
               >
                 <div
-                  className={`absolute -top-9 left-1/2 -translate-x-1/2 px-2 py-1 rounded-xl bg-black dark:bg-white text-white dark:text-black text-[10px] font-bold shadow-lg transition-opacity duration-150 pointer-events-none whitespace-nowrap ${
-                    hoveredIndex === i ? 'opacity-100' : 'opacity-0'
+                  className={`absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-xl bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 text-[10px] font-extrabold shadow-xl transition-all duration-150 pointer-events-none whitespace-nowrap z-30 ${
+                    hoveredIndex === i ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
                   }`}
                 >
                   ₹{pt.amount.toLocaleString('en-IN')}
                 </div>
               </div>
-            ))}
-          </div>
-
-          {/* Date Axis Labels */}
-          <div className="flex items-center justify-between px-2 pt-2 border-t border-black/5 dark:border-white/10 mt-2">
-            {chartData.map((d, index) => (
-              <span
-                key={d.date}
-                className={`text-[10px] font-bold transition-colors ${
-                  hoveredIndex === index
-                    ? 'text-blue-500'
-                    : 'text-neutral-400 dark:text-neutral-500'
-                }`}
-              >
-                {d.label}
-              </span>
             ))}
           </div>
         </div>
