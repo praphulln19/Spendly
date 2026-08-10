@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, Tag, FileText, IndianRupee } from 'lucide-react';
 import { expenseCategories, type ExpenseCategory, type ExpenseType } from '../types/expense';
@@ -17,14 +17,37 @@ interface GlassAddExpenseModalProps {
   }) => Promise<void>;
 }
 
+function getTodayDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getYesterdayDate() {
+  const now = new Date(Date.now() - 86400000);
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function GlassAddExpenseModal({ isOpen, onClose, onAdd }: GlassAddExpenseModalProps) {
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(getTodayDate);
   const [category, setCategory] = useState<ExpenseCategory>('Food');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<ExpenseType>('Need');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Auto-detect current date whenever the modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setDate(getTodayDate());
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,12 +164,38 @@ export function GlassAddExpenseModal({ isOpen, onClose, onAdd }: GlassAddExpense
                 </div>
               </div>
 
-              {/* Date */}
+              {/* Date with Auto-Detect & Custom Pick */}
               <div>
-                <label className="flex items-center gap-1.5 text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-blue-500" />
-                  <span>Date</span>
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                    <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                    <span>Date</span>
+                  </label>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setDate(getTodayDate())}
+                      className={`px-2 py-0.5 text-[10px] font-bold rounded-lg transition-all ${
+                        date === getTodayDate()
+                          ? 'bg-blue-500 text-white shadow-xs'
+                          : 'bg-black/5 dark:bg-white/10 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                      }`}
+                    >
+                      Today
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDate(getYesterdayDate())}
+                      className={`px-2 py-0.5 text-[10px] font-bold rounded-lg transition-all ${
+                        date === getYesterdayDate()
+                          ? 'bg-blue-500 text-white shadow-xs'
+                          : 'bg-black/5 dark:bg-white/10 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                      }`}
+                    >
+                      Yesterday
+                    </button>
+                  </div>
+                </div>
                 <input
                   type="date"
                   value={date}

@@ -11,6 +11,7 @@ import {
   ReceiptText,
   Plus,
   Download,
+  FileText,
   ArrowUpDown,
   Utensils,
   Bus,
@@ -49,6 +50,7 @@ interface GlassExpenseListProps {
   onDelete: (id: string) => Promise<void>;
   onOpenAddModal?: () => void;
   onExportCSV?: () => void;
+  onExportPDF?: () => void;
   showFilters?: boolean;
 }
 
@@ -57,6 +59,7 @@ export function GlassExpenseList({
   onDelete,
   onOpenAddModal,
   onExportCSV,
+  onExportPDF,
   showFilters = true,
 }: GlassExpenseListProps) {
   const [query, setQuery] = useState('');
@@ -126,11 +129,22 @@ export function GlassExpenseList({
               {onExportCSV && (
                 <button
                   onClick={onExportCSV}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-2xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-all text-neutral-800 dark:text-neutral-200"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-2xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-all text-neutral-800 dark:text-neutral-200"
                   title="Export to CSV"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Export CSV</span>
+                  <span>CSV</span>
+                </button>
+              )}
+
+              {onExportPDF && (
+                <button
+                  onClick={onExportPDF}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 transition-all"
+                  title="Export to PDF"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>PDF</span>
                 </button>
               )}
             </div>

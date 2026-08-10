@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { ThemeProvider } from '../context/ThemeProvider';
 import { ExpenseProvider } from '../hooks/useExpenses';
+import { PWAPrompt } from '../components/PWAPrompt';
 
 export const metadata: Metadata = {
   title: 'Spendly | Student Expense Tracker',
@@ -30,11 +31,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="apple-touch-icon" href="/SpendlyLogo.png" />
+        <link rel="apple-touch-icon" href="/icon.svg" />
       </head>
       <body>
         <ThemeProvider>
-          <ExpenseProvider>{children}</ExpenseProvider>
+          <ExpenseProvider>
+            {children}
+            <PWAPrompt />
+          </ExpenseProvider>
         </ThemeProvider>
       </body>
     </html>

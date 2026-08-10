@@ -44,6 +44,7 @@ export default function DashboardPage() {
     add,
     remove,
     exportCSV,
+    exportPDF,
   } = useExpenseStore();
 
   useEffect(() => {
@@ -122,9 +123,8 @@ export default function DashboardPage() {
           className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8"
         >
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full bg-black/5 dark:bg-white/10 text-neutral-800 dark:text-neutral-200 border border-black/5 dark:border-white/10 mb-2">
-              <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-              <span>DASHBOARD OVERVIEW</span>
+            <div className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-black/5 dark:bg-white/10 text-neutral-700 dark:text-neutral-300 border border-black/5 dark:border-white/10 mb-2">
+              <span>Dashboard Overview</span>
             </div>
             <div className="min-h-[2.5rem] flex items-center">
               <TextType
@@ -214,6 +214,7 @@ export default function DashboardPage() {
                 onDelete={remove}
                 onOpenAddModal={() => setIsAddModalOpen(true)}
                 onExportCSV={exportCSV}
+                onExportPDF={exportPDF}
                 showFilters={false}
               />
             </div>

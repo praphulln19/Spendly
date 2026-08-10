@@ -1,6 +1,8 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { supabase } from '../lib/supabase';
 import { createExpense, deleteExpense, getExpenses } from '../services/expenseService';
 import type { Expense, NewExpense } from '../types/expense';
@@ -15,6 +17,7 @@ type ExpenseStore = {
   add: (expense: NewExpense) => Promise<Expense>;
   remove: (id: string) => Promise<void>;
   exportCSV: () => void;
+  exportPDF: () => void;
 };
 
 const ExpenseContext = createContext<ExpenseStore | null>(null);
@@ -125,6 +128,44 @@ function useExpenseData(): ExpenseStore {
     document.body.removeChild(link);
   };
 
+  const exportPDF = () => {
+    if (expenses.length === 0) return;
+
+    const doc = new jsPDF();
+    const today = new Date().toISOString().slice(0, 10);
+    const totalSpent = expenses.reduce((acc, exp) => acc + exp.amount, 0);
+
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SPENDLY - EXPENSE STATEMENT', 14, 20);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated on: ${today}`, 14, 27);
+    doc.text(`Total Transactions: ${expenses.length}  |  Total Spent: INR ${totalSpent.toLocaleString('en-IN')}`, 14, 33);
+
+    const tableData = expenses.map(exp => [
+      exp.date,
+      exp.category,
+      exp.description,
+      exp.type,
+      `INR ${exp.amount.toLocaleString('en-IN')}`
+    ]);
+
+    autoTable(doc, {
+      startY: 40,
+      head: [['Date', 'Category', 'Description', 'Type', 'Amount']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255], fontStyle: 'bold' },
+      styles: { fontSize: 9, cellPadding: 3 },
+      foot: [['', '', 'Total', '', `INR ${totalSpent.toLocaleString('en-IN')}`]],
+      footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+    });
+
+    doc.save(`Spendly_Expenses_${today}.pdf`);
+  };
+
   return {
     expenses,
     loading,
@@ -135,5 +176,6 @@ function useExpenseData(): ExpenseStore {
     add,
     remove,
     exportCSV,
+    exportPDF,
   };
 }
