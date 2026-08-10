@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, Tag, FileText, IndianRupee, CheckCircle2 } from 'lucide-react';
+import { X, Calendar, Tag, FileText, IndianRupee } from 'lucide-react';
 import { expenseCategories, type ExpenseCategory, type ExpenseType } from '../types/expense';
 
 interface GlassAddExpenseModalProps {
@@ -74,16 +74,16 @@ export function GlassAddExpenseModal({ isOpen, onClose, onAdd }: GlassAddExpense
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/60 backdrop-blur-md"
           />
 
-          {/* Spring Modal */}
+          {/* Spring Modal Container */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            exit={{ opacity: 0, scale: 0.95, y: 15 }}
             transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-            className="relative w-full max-w-lg apple-glass rounded-3xl p-6 sm:p-8 shadow-2xl z-10 overflow-hidden"
+            className="relative w-full max-w-lg bg-white dark:bg-neutral-900 border border-black/10 dark:border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
@@ -109,13 +109,13 @@ export function GlassAddExpenseModal({ isOpen, onClose, onAdd }: GlassAddExpense
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {/* Need / Want Apple Segmented Control */}
               <div>
                 <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
                   Type
                 </label>
-                <div className="grid grid-cols-2 p-1 rounded-2xl bg-black/5 dark:bg-white/10">
+                <div className="grid grid-cols-2 p-1 rounded-2xl bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/10">
                   <button
                     type="button"
                     onClick={() => setType('Need')}
@@ -151,7 +151,7 @@ export function GlassAddExpenseModal({ isOpen, onClose, onAdd }: GlassAddExpense
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="input-field"
+                  className="w-full px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-2xl bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/15 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   required
                 />
               </div>
@@ -170,10 +170,10 @@ export function GlassAddExpenseModal({ isOpen, onClose, onAdd }: GlassAddExpense
                         key={cat}
                         type="button"
                         onClick={() => setCategory(cat)}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                           selected
                             ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm'
-                            : 'bg-black/5 dark:bg-white/5 text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                            : 'bg-black/5 dark:bg-white/10 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
                         }`}
                       >
                         {cat}
@@ -194,7 +194,7 @@ export function GlassAddExpenseModal({ isOpen, onClose, onAdd }: GlassAddExpense
                   placeholder="What did you spend on?"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="input-field"
+                  className="w-full px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-2xl bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/15 text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   required
                 />
               </div>
@@ -211,17 +211,25 @@ export function GlassAddExpenseModal({ isOpen, onClose, onAdd }: GlassAddExpense
                   placeholder="0"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="input-field"
+                  className="w-full px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-2xl bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/15 text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   required
                 />
               </div>
 
               {/* Actions */}
-              <div className="flex items-center justify-end gap-3 pt-4">
-                <button type="button" onClick={onClose} className="btn-secondary">
+              <div className="flex items-center justify-end gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2.5 text-xs font-bold rounded-2xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-neutral-700 dark:text-neutral-300 transition-all"
+                >
                   Cancel
                 </button>
-                <button type="submit" disabled={saving} className="btn-primary">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-5 py-2.5 text-xs font-bold rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm"
+                >
                   {saving ? 'Saving...' : 'Save Expense'}
                 </button>
               </div>
