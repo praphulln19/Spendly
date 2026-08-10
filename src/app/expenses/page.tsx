@@ -25,7 +25,6 @@ export default function ExpensesPage() {
     refresh,
     add,
     remove,
-    loadSampleData,
     exportCSV,
   } = useExpenseStore();
 
@@ -148,7 +147,6 @@ export default function ExpensesPage() {
             onDelete={remove}
             onOpenAddModal={() => setIsAddModalOpen(true)}
             onExportCSV={exportCSV}
-            onLoadSampleData={loadSampleData}
             showFilters={true}
           />
         )}

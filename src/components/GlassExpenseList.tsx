@@ -11,7 +11,6 @@ import {
   ReceiptText,
   Plus,
   Download,
-  Sparkles,
   ArrowUpDown,
   Utensils,
   Bus,
@@ -50,7 +49,6 @@ interface GlassExpenseListProps {
   onDelete: (id: string) => Promise<void>;
   onOpenAddModal?: () => void;
   onExportCSV?: () => void;
-  onLoadSampleData?: () => Promise<void>;
   showFilters?: boolean;
 }
 
@@ -59,7 +57,6 @@ export function GlassExpenseList({
   onDelete,
   onOpenAddModal,
   onExportCSV,
-  onLoadSampleData,
   showFilters = true,
 }: GlassExpenseListProps) {
   const [query, setQuery] = useState('');
@@ -173,7 +170,7 @@ export function GlassExpenseList({
           <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-sm mb-6">
             {query || selectedCategory !== 'All'
               ? 'Try clearing search filters or selecting a different category.'
-              : 'Add your expenses or load sample data to explore analytics.'}
+              : 'Add your expenses to explore analytics.'}
           </p>
 
           <div className="flex flex-row items-center justify-center gap-3 flex-wrap">
@@ -184,16 +181,6 @@ export function GlassExpenseList({
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Expense</span>
-              </button>
-            )}
-
-            {onLoadSampleData && (
-              <button
-                onClick={onLoadSampleData}
-                className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-2xl bg-black/5 dark:bg-white/10 text-neutral-800 dark:text-neutral-200 hover:bg-black/10 dark:hover:bg-white/20 active:scale-95 transition-all"
-              >
-                <Sparkles className="w-4 h-4 text-blue-500" />
-                <span>Load Demo Data</span>
               </button>
             )}
           </div>

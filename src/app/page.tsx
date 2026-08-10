@@ -32,7 +32,6 @@ export default function DashboardPage() {
     refresh,
     add,
     remove,
-    loadSampleData,
     exportCSV,
   } = useExpenseStore();
 
@@ -193,7 +192,6 @@ export default function DashboardPage() {
                 onDelete={remove}
                 onOpenAddModal={() => setIsAddModalOpen(true)}
                 onExportCSV={exportCSV}
-                onLoadSampleData={loadSampleData}
                 showFilters={false}
               />
             </div>

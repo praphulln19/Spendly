@@ -14,7 +14,6 @@ type ExpenseStore = {
   refresh: () => Promise<void>;
   add: (expense: NewExpense) => Promise<Expense>;
   remove: (id: string) => Promise<void>;
-  loadSampleData: () => Promise<void>;
   exportCSV: () => void;
 };
 
@@ -104,33 +103,6 @@ function useExpenseData(): ExpenseStore {
     setExpenses(current => current.filter(expense => expense.id !== id));
   };
 
-  const loadSampleData = async () => {
-    const today = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-    const threeDaysAgo = new Date(Date.now() - 86400000 * 3).toISOString().slice(0, 10);
-
-    const samples: NewExpense[] = [
-      { date: today, category: 'Food', description: 'Campus Mess & Coffee', amount: 350, type: 'Need' },
-      { date: today, category: 'Transport', description: 'Metro Pass Recharge', amount: 500, type: 'Need' },
-      { date: yesterday, category: 'Education', description: 'Algorithms Textbook', amount: 1200, type: 'Need' },
-      { date: yesterday, category: 'Subscriptions', description: 'Spotify Student Plan', amount: 59, type: 'Want' },
-      { date: threeDaysAgo, category: 'Entertainment', description: 'Movie Night Ticket', amount: 450, type: 'Want' },
-      { date: threeDaysAgo, category: 'Shopping', description: 'Sneakers Sale', amount: 2400, type: 'Want' },
-    ];
-
-    setLoading(true);
-    try {
-      for (const sample of samples) {
-        await createExpense(sample);
-      }
-      await refresh();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to seed sample data.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const exportCSV = () => {
     if (expenses.length === 0) return;
     const headers = ['Date', 'Category', 'Description', 'Amount (INR)', 'Type'];
@@ -162,7 +134,6 @@ function useExpenseData(): ExpenseStore {
     refresh,
     add,
     remove,
-    loadSampleData,
     exportCSV,
   };
 }

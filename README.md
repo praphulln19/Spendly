@@ -10,7 +10,6 @@ Designed with Apple Human Interface Guidelines and Airbnb-grade monochromatic gl
 - **Daily Spending Trends Analytics**: Framer Motion animated bar chart visualizing spending patterns.
 - **Category Breakdown**: Translucent frosted glass cards with glowing progress bars.
 - **Transaction Records Table**: Searchable, filterable list with category pills, date range filters, and CSV data export.
-- **Demo Data Generator**: 1-click sample data loader for immediate testing.
 - **Supabase Authentication**: Google and GitHub OAuth sign-in with row-level security.
 - **Light & Dark Theme**: Apple-style theme toggle.
 
