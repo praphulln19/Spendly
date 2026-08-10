@@ -1,0 +1,24 @@
+{
+  "name": "Spendly - Student Expense Tracker",
+  "short_name": "Spendly",
+  "description": "Designed with Apple-grade clarity. Track student spending, calculate daily budget limits, and gain instant financial confidence.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/SpendlyLogo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/SpendlyLogo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

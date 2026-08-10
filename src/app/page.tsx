@@ -13,6 +13,7 @@ import { GlassCategoryBreakdown } from '../components/GlassCategoryBreakdown';
 import { GlassExpenseList } from '../components/GlassExpenseList';
 import { GlassAddExpenseModal } from '../components/GlassAddExpenseModal';
 import { SetBudgetModal } from '../components/SetBudgetModal';
+import { MobileBottomNav } from '../components/MobileBottomNav';
 import { useExpenseStore } from '../hooks/useExpenses';
 import { Plus, ArrowRight, Loader2, RefreshCw, Sparkles, ReceiptText } from 'lucide-react';
 
@@ -37,7 +38,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const handleInitialSession = async () => {
-      // 1. Explicitly check for hash tokens from OAuth redirect
       if (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) {
         try {
           const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -57,11 +57,10 @@ export default function DashboardPage() {
             }
           }
         } catch {
-          // Ignore parse errors and fall back to getSession()
+          // Fall back to getSession()
         }
       }
 
-      // 2. Otherwise get session from storage
       const { data } = await supabase.auth.getSession();
       setSession(data.session);
       setReady(true);
@@ -69,7 +68,6 @@ export default function DashboardPage() {
 
     void handleInitialSession();
 
-    // 3. Listen for auth state changes
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setReady(true);
@@ -97,7 +95,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] dark:bg-black pb-16">
+    <div className="min-h-screen bg-[#f5f5f7] dark:bg-black pb-24 sm:pb-16">
       <AppleNavbar
         session={session}
         onOpenAddExpense={() => setIsAddModalOpen(true)}
@@ -105,25 +103,25 @@ export default function DashboardPage() {
         totalSpent={totalSpent}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-8 pt-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-8 pt-4 sm:pt-6">
         {/* Header Hero Section */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8"
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8"
         >
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full bg-black/5 dark:bg-white/10 text-neutral-800 dark:text-neutral-200 border border-black/5 dark:border-white/10 mb-2">
               <Sparkles className="w-3.5 h-3.5 text-blue-500" />
               <span>DASHBOARD OVERVIEW</span>
             </div>
-            <h1 className="text-3xl font-black font-display tracking-tight text-neutral-900 dark:text-white">
+            <h1 className="text-2xl sm:text-3xl font-black font-display tracking-tight text-neutral-900 dark:text-white">
               Student Financial Hub
             </h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-3">
             <button
               onClick={() => setIsAddModalOpen(true)}
               className="btn-primary"
@@ -154,9 +152,9 @@ export default function DashboardPage() {
             <p className="text-xs font-semibold">Loading student analytics...</p>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             {/* Top Grid: Budget Ring + Spending Trends + Category Breakdown */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
               {/* Budget Goal Ring */}
               <BudgetRing
                 expenses={expenses}
@@ -176,7 +174,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between mb-4 px-1">
                 <div className="flex items-center gap-2">
                   <ReceiptText className="w-5 h-5 text-blue-500" />
-                  <h2 className="text-xl font-bold font-display text-neutral-900 dark:text-white">
+                  <h2 className="text-lg sm:text-xl font-bold font-display text-neutral-900 dark:text-white">
                     Recent Activity
                   </h2>
                 </div>
@@ -202,6 +200,9 @@ export default function DashboardPage() {
           </div>
         )}
       </main>
+
+      {/* Floating Mobile Bottom Navigation */}
+      <MobileBottomNav onOpenAddExpense={() => setIsAddModalOpen(true)} />
 
       {/* Modals */}
       <GlassAddExpenseModal

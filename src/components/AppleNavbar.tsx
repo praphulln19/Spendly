@@ -46,15 +46,15 @@ export function AppleNavbar({
   const isOverBudget = remainingBudget < 0;
 
   return (
-    <header className="sticky top-0 z-50 px-4 py-3 sm:px-8">
-      <div className="max-w-7xl mx-auto apple-glass rounded-3xl px-5 py-3 flex items-center justify-between transition-all duration-300">
+    <header className="sticky top-0 z-40 px-3 py-2 sm:px-8 sm:py-3">
+      <div className="max-w-7xl mx-auto apple-glass rounded-2xl sm:rounded-3xl px-4 py-2.5 sm:px-5 sm:py-3 flex items-center justify-between transition-all duration-300">
         {/* Brand & Navigation */}
-        <div className="flex items-center gap-6 sm:gap-10">
+        <div className="flex items-center gap-4 sm:gap-10">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-2xl bg-black dark:bg-white flex items-center justify-center text-white dark:text-black shadow-md group-hover:scale-105 transition-transform duration-200">
-              <Wallet className="w-5 h-5" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-black dark:bg-white flex items-center justify-center text-white dark:text-black shadow-md group-hover:scale-105 transition-transform duration-200">
+              <Wallet className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50 font-display">
+            <span className="text-lg sm:text-xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50 font-display">
               Spendly
             </span>
           </Link>
@@ -102,7 +102,7 @@ export function AppleNavbar({
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {session && (
             <div className="hidden lg:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-2xl bg-black/5 dark:bg-white/10 text-neutral-700 dark:text-neutral-300">
               <Sparkles className="w-3.5 h-3.5 text-blue-500" />
@@ -118,17 +118,17 @@ export function AppleNavbar({
           {session && onOpenAddExpense && (
             <button
               onClick={onOpenAddExpense}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-xs font-bold rounded-xl sm:rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm"
             >
               <Plus className="w-4 h-4" />
-              <span>Add Expense</span>
+              <span className="hidden xs:inline sm:inline">Add Expense</span>
             </button>
           )}
 
           {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
-            className="w-10 h-10 rounded-2xl border border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/10 flex items-center justify-center text-neutral-800 dark:text-neutral-200 hover:scale-105 active:scale-95 transition-all"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl border border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/10 flex items-center justify-center text-neutral-800 dark:text-neutral-200 hover:scale-105 active:scale-95 transition-all"
             aria-label="Toggle theme"
           >
             <motion.div initial={false} animate={{ rotate: theme === 'dark' ? 180 : 0 }}>
@@ -141,7 +141,7 @@ export function AppleNavbar({
             <div className="relative">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="w-10 h-10 rounded-2xl border border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/10 flex items-center justify-center text-neutral-800 dark:text-neutral-200 hover:scale-105 transition-all"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl border border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/10 flex items-center justify-center text-neutral-800 dark:text-neutral-200 hover:scale-105 transition-all"
                 aria-label="Profile menu"
               >
                 <UserIcon className="w-4 h-4" />
@@ -154,11 +154,11 @@ export function AppleNavbar({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-full mt-2 w-56 apple-glass rounded-2xl p-2 shadow-2xl z-50"
+                    className="absolute right-0 top-full mt-2 w-60 rounded-2xl p-2.5 shadow-2xl z-[100] bg-white/95 dark:bg-neutral-900/95 border border-black/10 dark:border-white/15 backdrop-blur-3xl"
                   >
                     <div className="px-3 py-2 border-b border-black/5 dark:border-white/10 mb-1">
                       <p className="text-[10px] uppercase font-bold text-neutral-400">Signed in as</p>
-                      <p className="text-xs font-bold text-neutral-900 dark:text-white truncate">
+                      <p className="text-xs font-bold text-neutral-900 dark:text-white truncate mt-0.5">
                         {userEmail}
                       </p>
                     </div>

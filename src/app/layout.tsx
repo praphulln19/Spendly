@@ -1,11 +1,25 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { ThemeProvider } from '../context/ThemeProvider';
 import { ExpenseProvider } from '../hooks/useExpenses';
 
 export const metadata: Metadata = {
   title: 'Spendly | Student Expense Tracker',
-  description: 'A modern mobile and web expense-tracking app for students, built with Next.js, React 19, and Supabase.',
+  description: 'A modern mobile and web expense-tracking app for students, built with Next.js 15, React 19, and Supabase.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Spendly',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#000000',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -15,6 +29,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="apple-touch-icon" href="/SpendlyLogo.png" />
+      </head>
       <body>
         <ThemeProvider>
           <ExpenseProvider>{children}</ExpenseProvider>

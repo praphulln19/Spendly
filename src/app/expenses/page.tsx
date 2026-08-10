@@ -8,6 +8,7 @@ import { AppleNavbar } from '../../components/AppleNavbar';
 import { AppleAuthScreen } from '../../components/AppleAuthScreen';
 import { GlassExpenseList } from '../../components/GlassExpenseList';
 import { GlassAddExpenseModal } from '../../components/GlassAddExpenseModal';
+import { MobileBottomNav } from '../../components/MobileBottomNav';
 import { useExpenseStore } from '../../hooks/useExpenses';
 import { Plus, Loader2, RefreshCw, ReceiptText } from 'lucide-react';
 
@@ -87,7 +88,7 @@ export default function ExpensesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] dark:bg-black pb-16">
+    <div className="min-h-screen bg-[#f5f5f7] dark:bg-black pb-24 sm:pb-16">
       <AppleNavbar
         session={session}
         onOpenAddExpense={() => setIsAddModalOpen(true)}
@@ -95,27 +96,27 @@ export default function ExpensesPage() {
         totalSpent={totalSpent}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-8 pt-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-8 pt-4 sm:pt-6">
         {/* Header Hero Section */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8"
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8"
         >
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full bg-black/5 dark:bg-white/10 text-neutral-800 dark:text-neutral-200 border border-black/5 dark:border-white/10 mb-2">
               <ReceiptText className="w-3.5 h-3.5 text-blue-500" />
               <span>ALL TRANSACTIONS</span>
             </div>
-            <h1 className="text-3xl font-black font-display tracking-tight text-neutral-900 dark:text-white">
+            <h1 className="text-2xl sm:text-3xl font-black font-display tracking-tight text-neutral-900 dark:text-white">
               Transaction Records
             </h1>
           </div>
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="btn-primary"
+            className="hidden sm:inline-flex btn-primary"
           >
             <Plus className="w-4 h-4" />
             <span>Add Expense</span>
@@ -152,6 +153,9 @@ export default function ExpensesPage() {
           />
         )}
       </main>
+
+      {/* Floating Mobile Bottom Navigation */}
+      <MobileBottomNav onOpenAddExpense={() => setIsAddModalOpen(true)} />
 
       {/* Add Expense Modal */}
       <GlassAddExpenseModal

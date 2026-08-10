@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-import { Wallet, AlertCircle, ShieldCheck, Sparkles } from 'lucide-react';
+import { Wallet, AlertCircle, ShieldCheck } from 'lucide-react';
 
 export function AppleAuthScreen() {
   const [loading, setLoading] = useState<string | null>(null);
@@ -38,23 +38,13 @@ export function AppleAuthScreen() {
         className="w-full max-w-md apple-glass rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden"
       >
         {/* Brand Icon */}
-        <div className="w-16 h-16 rounded-3xl bg-black text-white dark:bg-white dark:text-black flex items-center justify-center mx-auto mb-6 shadow-xl">
+        <div className="w-16 h-16 rounded-3xl bg-black text-white dark:bg-white dark:text-black flex items-center justify-center mx-auto mb-4 shadow-xl">
           <Wallet className="w-8 h-8" />
         </div>
 
-        <div className="inline-flex mb-3">
-          <span className="apple-badge">
-            <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-            <span>STUDENT FINANCE ASSISTANT</span>
-          </span>
-        </div>
-
-        <h1 className="text-2xl font-black font-display text-neutral-900 dark:text-white mb-2 tracking-tight">
+        <h1 className="text-3xl font-black font-display text-neutral-900 dark:text-white mb-8 tracking-tight">
           Spendly
         </h1>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-8 leading-relaxed">
-          Designed with Apple-grade clarity. Track student spending, calculate daily budget limits, and gain instant financial confidence.
-        </p>
 
         {error && (
           <div className="flex items-center gap-2 p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold mb-6 text-left">
