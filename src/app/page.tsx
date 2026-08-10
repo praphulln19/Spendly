@@ -36,19 +36,46 @@ export default function DashboardPage() {
   } = useExpenseStore();
 
   useEffect(() => {
+    const handleInitialSession = async () => {
+      // 1. Explicitly check for hash tokens from OAuth redirect
+      if (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) {
+        try {
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const access_token = hashParams.get('access_token');
+          const refresh_token = hashParams.get('refresh_token');
+
+          if (access_token && refresh_token) {
+            const { data } = await supabase.auth.setSession({
+              access_token,
+              refresh_token,
+            });
+            if (data.session) {
+              setSession(data.session);
+              setReady(true);
+              window.history.replaceState(null, '', window.location.pathname);
+              return;
+            }
+          }
+        } catch {
+          // Ignore parse errors and fall back to getSession()
+        }
+      }
+
+      // 2. Otherwise get session from storage
+      const { data } = await supabase.auth.getSession();
+      setSession(data.session);
+      setReady(true);
+    };
+
+    void handleInitialSession();
+
+    // 3. Listen for auth state changes
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setReady(true);
       if (nextSession && typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
         window.history.replaceState(null, '', window.location.pathname);
       }
-    });
-
-    void supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        setSession(data.session);
-      }
-      setReady(true);
     });
 
     return () => subscription.subscription.unsubscribe();
