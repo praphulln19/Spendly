@@ -48,8 +48,8 @@ export function AppleNavbar({
   return (
     <header className="sticky top-0 z-40 px-3 py-2 sm:px-8 sm:py-3">
       <div className="max-w-7xl mx-auto apple-glass rounded-2xl sm:rounded-3xl px-3.5 py-2 sm:px-5 sm:py-3 flex items-center justify-between transition-all duration-300">
-        {/* Brand & Desktop Navigation */}
-        <div className="flex items-center gap-3 md:gap-8">
+        {/* Brand & Desktop Tabs */}
+        <div className="flex items-center gap-4 lg:gap-8">
           <Link href="/" className="flex items-center gap-2 group shrink-0">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-black dark:bg-white flex items-center justify-center text-white dark:text-black shadow-md group-hover:scale-105 transition-transform duration-200">
               <Wallet className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -59,9 +59,9 @@ export function AppleNavbar({
             </span>
           </Link>
 
-          {/* Desktop Apple Segmented Control Tabs */}
+          {/* Desktop Apple Segmented Control Tabs (Only on LG screens >= 1024px) */}
           {session && (
-            <nav className="apple-segmented-container hidden md:flex">
+            <nav className="apple-segmented-container hidden lg:flex">
               <Link href="/" className="relative">
                 <span
                   className={`apple-segmented-button flex items-center gap-2 ${
@@ -102,9 +102,9 @@ export function AppleNavbar({
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {session && (
-            <div className="hidden lg:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-2xl bg-black/5 dark:bg-white/10 text-neutral-700 dark:text-neutral-300">
+            <div className="hidden xl:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-2xl bg-black/5 dark:bg-white/10 text-neutral-700 dark:text-neutral-300">
               <Sparkles className="w-3.5 h-3.5 text-blue-500" />
               <span>
                 Budget:{' '}
