@@ -134,9 +134,7 @@ export default function DashboardPage() {
                 deletingSpeed={25}
                 pauseDuration={15000}
                 loop={true}
-                showCursor={true}
-                cursorCharacter="|"
-                cursorClassName="text-blue-500 font-bold"
+                showCursor={false}
                 className="text-xl sm:text-2xl md:text-3xl font-black font-display tracking-tight text-neutral-900 dark:text-white"
               />
             </div>
