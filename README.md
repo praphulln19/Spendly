@@ -1,83 +1,72 @@
 # Spendly
 
-A mobile expense-tracking app for students, built with Expo, React Native, TypeScript, and Supabase.
+A modern expense-tracking web application for students, built with Next.js 15 (App Router), React 19, TypeScript, and Supabase.
 
 ## Features
 
-- Live dashboard totals for all spending, needs, wants, and categories
-- Searchable and filterable transaction list
+- Live dashboard totals for all spending, needs, wants, and category breakdown
+- Searchable and filterable transaction list with quick actions
 - Authenticated add and delete expense interactions
-- Persistent Supabase mobile sessions
+- Persistent Supabase authentication with Google and GitHub OAuth sign-in
 - PostgreSQL row-level security so users can access only their own data
+- Dark mode support and responsive glassmorphism UI
 
-## Tech stack
+## Tech Stack
 
-- Expo, React Native, and TypeScript
-- React Navigation
-- Supabase Auth and PostgreSQL
-- React Native StyleSheet components
+- Next.js 15 (App Router) & React 19
+- TypeScript & Custom CSS Design System
+- Supabase Auth & PostgreSQL Database
+- Lucide React Icons
 
-## Run locally
+## Run Locally
 
 ```bash
 cd frontend
 npm install
-npm start
+npm run dev
 ```
 
-Scan the QR code with Expo Go, or run `npm run android` / `npm run ios` with an emulator available.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ## Configure Supabase
 
 1. Create a Supabase project.
 2. In the Supabase SQL Editor, run [the expense migration](frontend/supabase/migrations/20260808_create_expenses.sql).
-3. Copy `frontend/.env.example` to `frontend/.env`.
-4. Set your project values:
+3. Copy `frontend/.env.example` to `frontend/.env.local`.
+4. Set your project credentials:
 
 ```env
-EXPO_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-The migration creates the `expenses` table, its validation rules, an index, and row-level security policies. The app supports Google and GitHub OAuth sign-in only.
-
-## Google and GitHub sign-in
-
-The mobile app includes Google and GitHub buttons. Enable both providers before testing them:
-
-1. In Supabase Dashboard, open Authentication > URL Configuration and add `exp://**` as a development redirect URL for Expo Go. This wildcard is only for local development. For a standalone app build, add `spendly://**` instead.
-2. In Google Cloud, create a **Web application** OAuth client. Add `https://wmjivimkqbpzujcujzcd.supabase.co/auth/v1/callback` as its authorized redirect URI. In Supabase Dashboard, open Authentication > Providers > Google, enable it, and enter the Google client ID and secret.
-3. In GitHub, open Settings > Developer settings > OAuth Apps and register a new OAuth App. Use `https://wmjivimkqbpzujcujzcd.supabase.co/auth/v1/callback` as its Authorization callback URL. Generate a client secret. In Supabase Dashboard, open Authentication > Providers > GitHub, enable it, and enter the GitHub client ID and secret.
-
-Never put Google or GitHub client secrets in the Expo app or `.env`; they belong only in the Supabase provider configuration.
-
-## Project structure
+## Project Structure
 
 ```text
 frontend/
-|-- App.tsx                             # Native navigation and screens
-|-- app.json                            # Expo application configuration
 |-- src/
-|   |-- hooks/useExpenses.tsx           # Shared expense state and async actions
-|   |-- lib/supabase.ts                 # Persistent mobile Supabase client
-|   |-- services/expenseService.ts      # Expense CRUD operations
-|   `-- types/expense.ts                # Shared expense types
+|   |-- app/                            # Next.js App Router (pages, layout, globals.css, auth callback)
+|   |-- components/                     # UI components (Navbar, SummaryCards, ExpenseList, AddExpenseModal, etc.)
+|   |-- context/                        # ThemeProvider for dark/light mode
+|   |-- hooks/                          # Shared expense state and async actions
+|   |-- lib/                            # Supabase client setup
+|   |-- services/                       # Expense CRUD operations
+|   `-- types/                          # TypeScript definitions
 |-- supabase/migrations/                # Database schema and RLS policies
-`-- .env.example                        # Required public client environment variables
+`-- .env.example                        # Required public environment variables
 ```
 
-## Commands
+## Available Commands
 
 From `frontend/`:
 
 ```bash
-npm start         # Start Expo and show the QR code
-npm run android   # Start Expo on Android
-npm run ios       # Start Expo on iOS (macOS required)
-npm run web       # Start Expo for web
-npm run typecheck # Type-check the app
+npm run dev       # Start Next.js development server
+npm run build     # Build production application bundle
+npm start         # Run production server after building
+npm run typecheck # Type-check the app with TypeScript compiler
 ```
 
-## Security notes
+## Security Notes
 
-Never commit `.env` or a Supabase service-role key. The mobile app should use only the project URL and anon key; database access is protected by Supabase Auth and row-level security.
+Never commit `.env` or `.env.local` containing service-role keys. The client application uses only the public project URL and anon key; database access is enforced by Supabase Row-Level Security (RLS).

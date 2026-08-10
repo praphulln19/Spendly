@@ -4,6 +4,7 @@ frontend/.expo/
 
 # Build output and TypeScript build metadata
 frontend/dist/
+frontend/.next/
 frontend/*.tsbuildinfo
 frontend/vite.config.js
 frontend/vite.config.d.ts
