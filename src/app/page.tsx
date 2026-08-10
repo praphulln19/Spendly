@@ -36,21 +36,19 @@ export default function DashboardPage() {
   } = useExpenseStore();
 
   useEffect(() => {
-    // Clean hash token from URL bar if present
-    if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
-      window.history.replaceState(null, '', window.location.pathname);
-    }
-
-    void supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setReady(true);
-    });
-
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
-      if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+      setReady(true);
+      if (nextSession && typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
         window.history.replaceState(null, '', window.location.pathname);
       }
+    });
+
+    void supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        setSession(data.session);
+      }
+      setReady(true);
     });
 
     return () => subscription.subscription.unsubscribe();
