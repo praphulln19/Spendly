@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { supabase } from '../lib/supabase';
 import { createExpense, deleteExpense, getExpenses } from '../services/expenseService';
 import type { Expense, NewExpense } from '../types/expense';
 
@@ -35,6 +36,7 @@ function useExpenseData(): ExpenseStore {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [monthlyBudget, setMonthlyBudgetState] = useState<number>(20000);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   useEffect(() => {
     const savedBudget = localStorage.getItem('spendly_monthly_budget');
@@ -50,6 +52,12 @@ function useExpenseData(): ExpenseStore {
   };
 
   const refresh = useCallback(async () => {
+    if (!isAuthenticated) {
+      setExpenses([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const data = await getExpenses();
@@ -60,11 +68,30 @@ function useExpenseData(): ExpenseStore {
     } finally {
       setLoading(false);
     }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => {
+      setIsAuthenticated(!!data.session);
+      if (!data.session) setLoading(false);
+    });
+
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+      if (!session) {
+        setExpenses([]);
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    if (isAuthenticated) {
+      void refresh();
+    }
+  }, [isAuthenticated, refresh]);
 
   const add = async (expense: NewExpense) => {
     const saved = await createExpense(expense);
