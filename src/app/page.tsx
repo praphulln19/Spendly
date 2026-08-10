@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
@@ -16,12 +16,23 @@ import { SetBudgetModal } from '../components/SetBudgetModal';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import { useExpenseStore } from '../hooks/useExpenses';
 import { Plus, ArrowRight, Loader2, RefreshCw, Sparkles, ReceiptText } from 'lucide-react';
+import TextType from '../components/TextType';
+import { FINANCIAL_QUOTES } from '../data/quotes';
 
 export default function DashboardPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+
+  const quotesList = useMemo(() => {
+    const arr = [...FINANCIAL_QUOTES];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, []);
 
   const {
     expenses,
@@ -115,9 +126,20 @@ export default function DashboardPage() {
               <Sparkles className="w-3.5 h-3.5 text-blue-500" />
               <span>DASHBOARD OVERVIEW</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black font-display tracking-tight text-neutral-900 dark:text-white">
-              Student Financial Hub
-            </h1>
+            <div className="min-h-[2.5rem] flex items-center">
+              <TextType
+                text={quotesList}
+                as="h1"
+                typingSpeed={40}
+                deletingSpeed={25}
+                pauseDuration={15000}
+                loop={true}
+                showCursor={true}
+                cursorCharacter="|"
+                cursorClassName="text-blue-500 font-bold"
+                className="text-xl sm:text-2xl md:text-3xl font-black font-display tracking-tight text-neutral-900 dark:text-white"
+              />
+            </div>
           </div>
 
           <div className="hidden sm:flex items-center gap-3">
