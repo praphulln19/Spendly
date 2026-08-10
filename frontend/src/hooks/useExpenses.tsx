@@ -1,52 +1,141 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
-import { createExpense, deleteExpense, getExpenses } from '../services/expenseService'
-import type { Expense, NewExpense } from '../types/expense'
+'use client';
+
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createExpense, deleteExpense, getExpenses } from '../services/expenseService';
+import type { Expense, NewExpense } from '../types/expense';
 
 type ExpenseStore = {
-  expenses: Expense[]
-  loading: boolean
-  error: string | null
-  refresh: () => Promise<void>
-  add: (expense: NewExpense) => Promise<void>
-  remove: (id: string) => Promise<void>
-}
+  expenses: Expense[];
+  loading: boolean;
+  error: string | null;
+  monthlyBudget: number;
+  setMonthlyBudget: (budget: number) => void;
+  refresh: () => Promise<void>;
+  add: (expense: NewExpense) => Promise<Expense>;
+  remove: (id: string) => Promise<void>;
+  loadSampleData: () => Promise<void>;
+  exportCSV: () => void;
+};
 
-const ExpenseContext = createContext<ExpenseStore | null>(null)
+const ExpenseContext = createContext<ExpenseStore | null>(null);
 
 export function ExpenseProvider({ children }: { children: ReactNode }) {
-  const store = useExpenseData()
-  return <ExpenseContext.Provider value={store}>{children}</ExpenseContext.Provider>
+  const store = useExpenseData();
+  return <ExpenseContext.Provider value={store}>{children}</ExpenseContext.Provider>;
 }
 
 export function useExpenseStore() {
-  const store = useContext(ExpenseContext)
-  if (!store) throw new Error('useExpenseStore must be used inside ExpenseProvider.')
-  return store
+  const store = useContext(ExpenseContext);
+  if (!store) throw new Error('useExpenseStore must be used inside ExpenseProvider.');
+  return store;
 }
 
 function useExpenseData(): ExpenseStore {
-  const [expenses, setExpenses] = useState<Expense[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [monthlyBudget, setMonthlyBudgetState] = useState<number>(20000);
+
+  useEffect(() => {
+    const savedBudget = localStorage.getItem('spendly_monthly_budget');
+    if (savedBudget) {
+      const parsed = Number(savedBudget);
+      if (Number.isFinite(parsed) && parsed > 0) setMonthlyBudgetState(parsed);
+    }
+  }, []);
+
+  const setMonthlyBudget = (budget: number) => {
+    setMonthlyBudgetState(budget);
+    localStorage.setItem('spendly_monthly_budget', String(budget));
+  };
 
   const refresh = useCallback(async () => {
-    setLoading(true)
-    try { setExpenses(await getExpenses()); setError(null) }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load expenses.') }
-    finally { setLoading(false) }
-  }, [])
+    setLoading(true);
+    try {
+      const data = await getExpenses();
+      setExpenses(data);
+      setError(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to load expenses.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  useEffect(() => { void refresh() }, [refresh])
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   const add = async (expense: NewExpense) => {
-    const saved = await createExpense(expense)
-    setExpenses(current => [saved, ...current])
-  }
+    const saved = await createExpense(expense);
+    setExpenses(current => [saved, ...current]);
+    return saved;
+  };
 
   const remove = async (id: string) => {
-    await deleteExpense(id)
-    setExpenses(current => current.filter(expense => expense.id !== id))
-  }
+    await deleteExpense(id);
+    setExpenses(current => current.filter(expense => expense.id !== id));
+  };
 
-  return { expenses, loading, error, refresh, add, remove }
+  const loadSampleData = async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const threeDaysAgo = new Date(Date.now() - 86400000 * 3).toISOString().slice(0, 10);
+
+    const samples: NewExpense[] = [
+      { date: today, category: 'Food', description: 'Campus Mess & Coffee', amount: 350, type: 'Need' },
+      { date: today, category: 'Transport', description: 'Metro Pass Recharge', amount: 500, type: 'Need' },
+      { date: yesterday, category: 'Education', description: 'Algorithms Textbook', amount: 1200, type: 'Need' },
+      { date: yesterday, category: 'Subscriptions', description: 'Spotify Student Plan', amount: 59, type: 'Want' },
+      { date: threeDaysAgo, category: 'Entertainment', description: 'Movie Night Ticket', amount: 450, type: 'Want' },
+      { date: threeDaysAgo, category: 'Shopping', description: 'Sneakers Sale', amount: 2400, type: 'Want' },
+    ];
+
+    setLoading(true);
+    try {
+      for (const sample of samples) {
+        await createExpense(sample);
+      }
+      await refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to seed sample data.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const exportCSV = () => {
+    if (expenses.length === 0) return;
+    const headers = ['Date', 'Category', 'Description', 'Amount (INR)', 'Type'];
+    const rows = expenses.map(exp => [
+      exp.date,
+      `"${exp.category}"`,
+      `"${exp.description.replace(/"/g, '""')}"`,
+      exp.amount,
+      exp.type,
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Spendly_Expenses_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return {
+    expenses,
+    loading,
+    error,
+    monthlyBudget,
+    setMonthlyBudget,
+    refresh,
+    add,
+    remove,
+    loadSampleData,
+    exportCSV,
+  };
 }
