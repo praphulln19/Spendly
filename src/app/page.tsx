@@ -36,6 +36,11 @@ export default function DashboardPage() {
   } = useExpenseStore();
 
   useEffect(() => {
+    // Clean hash token from URL bar if present
+    if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+
     void supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setReady(true);
@@ -43,6 +48,9 @@ export default function DashboardPage() {
 
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
+      if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
     });
 
     return () => subscription.subscription.unsubscribe();
