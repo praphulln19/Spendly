@@ -12,45 +12,45 @@ export function MobileBottomNav({ onOpenAddExpense }: MobileBottomNavProps) {
   const pathname = usePathname();
 
   return (
-    <div className="lg:hidden fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-sm z-50">
-      <div className="apple-glass rounded-3xl p-1.5 flex items-center justify-between shadow-2xl border border-black/10 dark:border-white/15 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-3xl">
-        {/* Dashboard Tab */}
+    <div className="lg:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-50">
+      <div className="apple-glass rounded-full p-2 flex items-center justify-center gap-2.5 shadow-2xl border border-black/10 dark:border-white/15 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-3xl">
+        {/* Dashboard Squircle */}
         <Link
           href="/"
-          className={`flex-1 h-12 flex flex-col items-center justify-center gap-0.5 rounded-2xl transition-all ${
+          className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${
             pathname === '/'
-              ? 'text-black dark:text-white bg-black/5 dark:bg-white/10 font-bold'
-              : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white font-medium'
+              ? 'bg-black/10 dark:bg-white/15 text-neutral-900 dark:text-white font-bold shadow-xs'
+              : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white font-medium hover:bg-black/5 dark:hover:bg-white/5'
           }`}
+          aria-label="Dashboard"
         >
-          <LayoutDashboard className="w-4 h-4" />
-          <span className="text-[10px]">Dashboard</span>
+          <LayoutDashboard className="w-5 h-5" />
+          <span className="text-[9px] font-bold tracking-tight">Dashboard</span>
         </Link>
 
-        {/* Center Floating Plus Button */}
+        {/* Plus Button Squircle */}
         {onOpenAddExpense && (
-          <div className="px-2 shrink-0">
-            <button
-              onClick={onOpenAddExpense}
-              className="w-12 h-12 rounded-2xl bg-black text-white dark:bg-white dark:text-black flex items-center justify-center shadow-lg active:scale-95 transition-transform"
-              aria-label="Add Expense"
-            >
-              <Plus className="w-6 h-6" />
-            </button>
-          </div>
+          <button
+            onClick={onOpenAddExpense}
+            className="w-14 h-14 rounded-2xl bg-black text-white dark:bg-white dark:text-black flex items-center justify-center shadow-lg active:scale-95 transition-transform hover:opacity-90 shrink-0"
+            aria-label="Add Expense"
+          >
+            <Plus className="w-6 h-6" />
+          </button>
         )}
 
-        {/* Expenses Tab */}
+        {/* Expenses Squircle */}
         <Link
           href="/expenses"
-          className={`flex-1 h-12 flex flex-col items-center justify-center gap-0.5 rounded-2xl transition-all ${
+          className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${
             pathname === '/expenses'
-              ? 'text-black dark:text-white bg-black/5 dark:bg-white/10 font-bold'
-              : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white font-medium'
+              ? 'bg-black/10 dark:bg-white/15 text-neutral-900 dark:text-white font-bold shadow-xs'
+              : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white font-medium hover:bg-black/5 dark:hover:bg-white/5'
           }`}
+          aria-label="Expenses"
         >
-          <ReceiptText className="w-4 h-4" />
-          <span className="text-[10px]">Expenses</span>
+          <ReceiptText className="w-5 h-5" />
+          <span className="text-[9px] font-bold tracking-tight">Expenses</span>
         </Link>
       </div>
     </div>
