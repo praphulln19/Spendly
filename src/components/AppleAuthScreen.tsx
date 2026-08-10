@@ -13,7 +13,8 @@ export function AppleAuthScreen() {
     setLoading(provider);
     setError(null);
     try {
-      const redirectTo = typeof window !== 'undefined' ? window.location.origin : '';
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const redirectTo = `${origin}/auth/callback`;
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
