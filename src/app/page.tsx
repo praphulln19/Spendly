@@ -15,15 +15,24 @@ import { GlassAddExpenseModal } from '../components/GlassAddExpenseModal';
 import { SetBudgetModal } from '../components/SetBudgetModal';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import { useExpenseStore } from '../hooks/useExpenses';
-import { Plus, ArrowRight, Loader2, RefreshCw, Sparkles, ReceiptText } from 'lucide-react';
+import { Plus, ArrowRight, Loader2, RefreshCw, Sparkles, ReceiptText, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import TextType from '../components/TextType';
 import { FINANCIAL_QUOTES } from '../data/quotes';
+import {
+  getMonthKey,
+  formatMonthLabel,
+  getPreviousMonthKey,
+  getNextMonthKey,
+  getExpensesForMonth,
+  getCarryoverAmount,
+} from '../utils/budgetUtils';
 
 export default function DashboardPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+  const [selectedMonthKey, setSelectedMonthKey] = useState<string>(() => getMonthKey(new Date()));
 
   const quotesList = useMemo(() => {
     const arr = [...FINANCIAL_QUOTES];
@@ -90,7 +99,22 @@ export default function DashboardPage() {
     return () => subscription.subscription.unsubscribe();
   }, []);
 
-  const totalSpent = expenses.reduce((acc, exp) => acc + exp.amount, 0);
+  // Calculate Month-Specific Budget Metrics
+  const currentCalendarMonthKey = useMemo(() => getMonthKey(new Date()), []);
+  const monthExpenses = useMemo(
+    () => getExpensesForMonth(expenses, selectedMonthKey),
+    [expenses, selectedMonthKey]
+  );
+  const currentMonthSpent = useMemo(
+    () => monthExpenses.reduce((acc, exp) => acc + exp.amount, 0),
+    [monthExpenses]
+  );
+  const carryoverAmount = useMemo(
+    () => getCarryoverAmount(expenses, selectedMonthKey, monthlyBudget),
+    [expenses, selectedMonthKey, monthlyBudget]
+  );
+  const effectiveBudget = monthlyBudget + carryoverAmount;
+  const remainingBudget = effectiveBudget - currentMonthSpent;
 
   if (!ready) {
     return (
@@ -111,7 +135,9 @@ export default function DashboardPage() {
         session={session}
         onOpenAddExpense={() => setIsAddModalOpen(true)}
         monthlyBudget={monthlyBudget}
-        totalSpent={totalSpent}
+        totalSpent={currentMonthSpent}
+        remainingBudget={remainingBudget}
+        carryoverAmount={carryoverAmount}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-8 pt-4 sm:pt-6">
@@ -123,9 +149,41 @@ export default function DashboardPage() {
           className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8"
         >
           <div>
-            <div className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-black/5 dark:bg-white/10 text-neutral-700 dark:text-neutral-300 border border-black/5 dark:border-white/10 mb-2">
-              <span>Dashboard Overview</span>
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <div className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-black/5 dark:bg-white/10 text-neutral-700 dark:text-neutral-300 border border-black/5 dark:border-white/10">
+                <span>Dashboard Overview</span>
+              </div>
+
+              {/* Month Selector Tool */}
+              <div className="inline-flex items-center gap-1 p-0.5 rounded-full bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/10 text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                <button
+                  onClick={() => setSelectedMonthKey(getPreviousMonthKey(selectedMonthKey))}
+                  className="p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+                  title="Previous Month"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <span className="px-2 font-bold font-display text-[11px] whitespace-nowrap">
+                  {formatMonthLabel(selectedMonthKey)}
+                </span>
+                <button
+                  onClick={() => setSelectedMonthKey(getNextMonthKey(selectedMonthKey))}
+                  className="p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+                  title="Next Month"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+                {selectedMonthKey !== currentCalendarMonthKey && (
+                  <button
+                    onClick={() => setSelectedMonthKey(currentCalendarMonthKey)}
+                    className="ml-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                  >
+                    Current
+                  </button>
+                )}
+              </div>
             </div>
+
             <div className="min-h-[2.5rem] flex items-center">
               <TextType
                 text={quotesList}
@@ -178,14 +236,15 @@ export default function DashboardPage() {
               <BudgetRing
                 expenses={expenses}
                 monthlyBudget={monthlyBudget}
+                selectedMonthKey={selectedMonthKey}
                 onOpenSetBudget={() => setIsBudgetModalOpen(true)}
               />
 
               {/* Spending Trends Bar Chart */}
-              <AnalyticsBarChart expenses={expenses} />
+              <AnalyticsBarChart expenses={expenses} selectedMonthKey={selectedMonthKey} />
 
               {/* Category Breakdown */}
-              <GlassCategoryBreakdown expenses={expenses} />
+              <GlassCategoryBreakdown expenses={expenses} selectedMonthKey={selectedMonthKey} />
             </div>
 
             {/* Recent Activity Section */}
@@ -194,7 +253,9 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2">
                   <ReceiptText className="w-5 h-5 text-blue-500" />
                   <h2 className="text-lg sm:text-xl font-bold font-display text-neutral-900 dark:text-white">
-                    Recent Activity
+                    {selectedMonthKey === currentCalendarMonthKey
+                      ? 'Recent Activity'
+                      : `${formatMonthLabel(selectedMonthKey)} Activity`}
                   </h2>
                 </div>
 
@@ -208,7 +269,7 @@ export default function DashboardPage() {
               </div>
 
               <GlassExpenseList
-                expenses={expenses.slice(0, 5)}
+                expenses={monthExpenses.length > 0 ? monthExpenses.slice(0, 5) : expenses.slice(0, 5)}
                 onDelete={remove}
                 onOpenAddModal={() => setIsAddModalOpen(true)}
                 onExportCSV={exportCSV}

@@ -31,13 +31,21 @@ const categoryIcons: Record<ExpenseCategory, LucideIcon> = {
   Other: CircleEllipsis,
 };
 
+import { getMonthKey, getExpensesForMonth } from '../utils/budgetUtils';
+
 interface GlassCategoryBreakdownProps {
   expenses: Expense[];
+  selectedMonthKey?: string;
 }
 
-export function GlassCategoryBreakdown({ expenses }: GlassCategoryBreakdownProps) {
+export function GlassCategoryBreakdown({
+  expenses,
+  selectedMonthKey = getMonthKey(new Date()),
+}: GlassCategoryBreakdownProps) {
+  const monthExpenses = getExpensesForMonth(expenses, selectedMonthKey);
+
   const categoryTotals = Object.entries(
-    expenses.reduce<Record<string, number>>((acc, exp) => {
+    monthExpenses.reduce<Record<string, number>>((acc, exp) => {
       acc[exp.category] = (acc[exp.category] || 0) + exp.amount;
       return acc;
     }, {})

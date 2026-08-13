@@ -4,16 +4,23 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, Calendar, LineChart } from 'lucide-react';
 import type { Expense } from '../types/expense';
+import { getMonthKey, getExpensesForMonth, formatMonthLabel } from '../utils/budgetUtils';
 
 interface AnalyticsBarChartProps {
   expenses: Expense[];
+  selectedMonthKey?: string;
 }
 
-export function AnalyticsBarChart({ expenses }: AnalyticsBarChartProps) {
+export function AnalyticsBarChart({
+  expenses,
+  selectedMonthKey = getMonthKey(new Date()),
+}: AnalyticsBarChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-  // Aggregate expenses by date (last 7 recorded days)
-  const dateTotals = expenses.reduce<Record<string, number>>((acc, exp) => {
+  const monthExpenses = getExpensesForMonth(expenses, selectedMonthKey);
+
+  // Aggregate expenses by date
+  const dateTotals = monthExpenses.reduce<Record<string, number>>((acc, exp) => {
     const dateKey = exp.date.slice(0, 10);
     acc[dateKey] = (acc[dateKey] || 0) + exp.amount;
     return acc;

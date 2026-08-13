@@ -12,6 +12,8 @@ import { MobileBottomNav } from '../../components/MobileBottomNav';
 import { useExpenseStore } from '../../hooks/useExpenses';
 import { Plus, Loader2, RefreshCw, ReceiptText } from 'lucide-react';
 
+import { getMonthKey, getExpensesForMonth, getCarryoverAmount } from '../../utils/budgetUtils';
+
 export default function ExpensesPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
@@ -72,7 +74,12 @@ export default function ExpensesPage() {
     return () => subscription.subscription.unsubscribe();
   }, []);
 
-  const totalSpent = expenses.reduce((acc, exp) => acc + exp.amount, 0);
+  const currentMonthKey = getMonthKey(new Date());
+  const currentMonthExpenses = getExpensesForMonth(expenses, currentMonthKey);
+  const currentMonthSpent = currentMonthExpenses.reduce((acc, exp) => acc + exp.amount, 0);
+  const carryoverAmount = getCarryoverAmount(expenses, currentMonthKey, monthlyBudget);
+  const effectiveBudget = monthlyBudget + carryoverAmount;
+  const remainingBudget = effectiveBudget - currentMonthSpent;
 
   if (!ready) {
     return (
@@ -93,7 +100,9 @@ export default function ExpensesPage() {
         session={session}
         onOpenAddExpense={() => setIsAddModalOpen(true)}
         monthlyBudget={monthlyBudget}
-        totalSpent={totalSpent}
+        totalSpent={currentMonthSpent}
+        remainingBudget={remainingBudget}
+        carryoverAmount={carryoverAmount}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-8 pt-4 sm:pt-6">

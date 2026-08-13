@@ -1,27 +1,46 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Target, TrendingDown, AlertTriangle, CheckCircle2, SlidersHorizontal } from 'lucide-react';
+import { Target, AlertTriangle, CheckCircle2, SlidersHorizontal, ArrowUpRight, Sparkles } from 'lucide-react';
 import type { Expense } from '../types/expense';
+import {
+  getMonthKey,
+  formatMonthLabel,
+  getExpensesForMonth,
+  getCarryoverAmount,
+  getDaysRemainingInMonth,
+} from '../utils/budgetUtils';
 
 interface BudgetRingProps {
   expenses: Expense[];
   monthlyBudget: number;
   onOpenSetBudget: () => void;
+  selectedMonthKey?: string;
 }
 
-export function BudgetRing({ expenses, monthlyBudget, onOpenSetBudget }: BudgetRingProps) {
-  const totalSpent = expenses.reduce((acc, exp) => acc + exp.amount, 0);
-  const remainingBudget = monthlyBudget - totalSpent;
-  const percentage = Math.min(100, Math.max(0, Math.round((totalSpent / monthlyBudget) * 100)));
+export function BudgetRing({
+  expenses,
+  monthlyBudget,
+  onOpenSetBudget,
+  selectedMonthKey = getMonthKey(new Date()),
+}: BudgetRingProps) {
+  const monthExpenses = getExpensesForMonth(expenses, selectedMonthKey);
+  const totalSpent = monthExpenses.reduce((acc, exp) => acc + exp.amount, 0);
 
-  // Calculate days remaining in current month
-  const now = new Date();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const currentDay = now.getDate();
-  const daysRemaining = Math.max(1, daysInMonth - currentDay + 1);
+  const carryover = getCarryoverAmount(expenses, selectedMonthKey, monthlyBudget);
+  const effectiveBudget = monthlyBudget + carryover;
 
-  const dailyAllowance = Math.max(0, Math.round(remainingBudget / daysRemaining));
+  const remainingBudget = effectiveBudget - totalSpent;
+  const percentage =
+    effectiveBudget > 0
+      ? Math.min(100, Math.max(0, Math.round((totalSpent / effectiveBudget) * 100)))
+      : 0;
+
+  const { daysRemaining } = getDaysRemainingInMonth(selectedMonthKey);
+  const isCurrentMonth = selectedMonthKey === getMonthKey(new Date());
+
+  const dailyAllowance =
+    daysRemaining > 0 ? Math.max(0, Math.round(remainingBudget / daysRemaining)) : 0;
 
   let statusText = 'On Track';
   let statusColor = 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
@@ -43,6 +62,7 @@ export function BudgetRing({ expenses, monthlyBudget, onOpenSetBudget }: BudgetR
 
   return (
     <div className="apple-card flex flex-col justify-between h-full">
+      {/* Card Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-black/5 dark:bg-white/10 flex items-center justify-center">
@@ -52,7 +72,9 @@ export function BudgetRing({ expenses, monthlyBudget, onOpenSetBudget }: BudgetR
             <h3 className="text-base font-bold font-display text-neutral-900 dark:text-white">
               Budget Goal
             </h3>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Monthly spending limit</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              {formatMonthLabel(selectedMonthKey)}
+            </p>
           </div>
         </div>
 
@@ -65,6 +87,7 @@ export function BudgetRing({ expenses, monthlyBudget, onOpenSetBudget }: BudgetR
         </button>
       </div>
 
+      {/* Ring & Stats Container */}
       <div className="flex flex-col sm:flex-row items-center justify-around gap-6 my-auto">
         {/* Apple Watch Ring SVG */}
         <div className="relative w-36 h-36 flex items-center justify-center">
@@ -83,7 +106,13 @@ export function BudgetRing({ expenses, monthlyBudget, onOpenSetBudget }: BudgetR
               cx="60"
               cy="60"
               r={radius}
-              className={percentage >= 100 ? 'stroke-red-500' : percentage >= 80 ? 'stroke-amber-500' : 'stroke-blue-500'}
+              className={
+                percentage >= 100
+                  ? 'stroke-red-500'
+                  : percentage >= 80
+                  ? 'stroke-amber-500'
+                  : 'stroke-blue-500'
+              }
               strokeWidth="10"
               strokeDasharray={circumference}
               initial={{ strokeDashoffset: circumference }}
@@ -104,7 +133,9 @@ export function BudgetRing({ expenses, monthlyBudget, onOpenSetBudget }: BudgetR
 
         {/* Stats Column */}
         <div className="flex flex-col gap-3 w-full sm:w-auto">
-          <div className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full border ${statusColor}`}>
+          <div
+            className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full border ${statusColor}`}
+          >
             <StatusIcon className="w-3.5 h-3.5" />
             <span>{statusText}</span>
           </div>
@@ -115,17 +146,40 @@ export function BudgetRing({ expenses, monthlyBudget, onOpenSetBudget }: BudgetR
               ₹{dailyAllowance.toLocaleString('en-IN')}{' '}
               <span className="text-xs font-normal text-neutral-400">/ day</span>
             </p>
-            <p className="text-[11px] text-neutral-400">({daysRemaining} days left this month)</p>
+            {isCurrentMonth ? (
+              <p className="text-[11px] text-neutral-400">({daysRemaining} days left this month)</p>
+            ) : (
+              <p className="text-[11px] text-neutral-400">Past month record</p>
+            )}
           </div>
 
-          <div className="pt-2 border-t border-black/5 dark:border-white/10">
-            <p className="text-xs text-neutral-400 font-medium">Monthly Goal</p>
-            <p className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-              ₹{monthlyBudget.toLocaleString('en-IN')}
-            </p>
+          <div className="pt-2 border-t border-black/5 dark:border-white/10 space-y-1">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-xs text-neutral-400 font-medium">Base Budget:</span>
+              <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                ₹{monthlyBudget.toLocaleString('en-IN')}
+              </span>
+            </div>
+
+            {carryover > 0 && (
+              <div className="flex items-center justify-between gap-4 text-emerald-600 dark:text-emerald-400">
+                <span className="text-xs font-medium flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> Rollover:
+                </span>
+                <span className="text-xs font-bold">+₹{carryover.toLocaleString('en-IN')}</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-4 pt-1 border-t border-dashed border-black/5 dark:border-white/10">
+              <span className="text-xs text-neutral-500 font-bold">Total Budget:</span>
+              <span className="text-sm font-bold font-display text-neutral-900 dark:text-white">
+                ₹{effectiveBudget.toLocaleString('en-IN')}
+              </span>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
 }
+

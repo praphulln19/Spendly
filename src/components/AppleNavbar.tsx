@@ -25,6 +25,8 @@ interface AppleNavbarProps {
   onOpenAddExpense?: () => void;
   monthlyBudget?: number;
   totalSpent?: number;
+  remainingBudget?: number;
+  carryoverAmount?: number;
 }
 
 export function AppleNavbar({
@@ -32,6 +34,8 @@ export function AppleNavbar({
   onOpenAddExpense,
   monthlyBudget = 20000,
   totalSpent = 0,
+  remainingBudget: customRemaining,
+  carryoverAmount = 0,
 }: AppleNavbarProps) {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
@@ -51,7 +55,7 @@ export function AppleNavbar({
   };
 
   const userEmail = session?.user?.email || 'Student';
-  const remainingBudget = monthlyBudget - totalSpent;
+  const remainingBudget = customRemaining ?? (monthlyBudget - totalSpent);
   const isOverBudget = remainingBudget < 0;
 
   return (

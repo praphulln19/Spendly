@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, Tag, FileText, IndianRupee } from 'lucide-react';
+import { X, Calendar, Tag, FileText, IndianRupee, Info } from 'lucide-react';
 import { expenseCategories, type ExpenseCategory, type ExpenseType } from '../types/expense';
+import { formatMonthLabel } from '../utils/budgetUtils';
 
 interface GlassAddExpenseModalProps {
   isOpen: boolean;
@@ -203,6 +204,14 @@ export function GlassAddExpenseModal({ isOpen, onClose, onAdd }: GlassAddExpense
                   className="w-full px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-2xl bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/15 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   required
                 />
+                {date && date.slice(0, 7) < getTodayDate().slice(0, 7) && (
+                  <div className="mt-2 flex items-start gap-2 p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-[11px] font-medium leading-tight">
+                    <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    <span>
+                      Logging expense for <strong>{formatMonthLabel(date.slice(0, 7))}</strong>. This updates that month's total and recalculates any carryover for the current month.
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Category selector grid */}
