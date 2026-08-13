@@ -67,24 +67,17 @@ export function getMonthTotalSpent(expenses: Expense[], monthKey: string): numbe
 }
 
 /**
- * Calculate unspent carryover from the immediate previous month.
- * If previous month spent < baseBudget, carryover = baseBudget - prevMonthSpent.
- * If previous month spent >= baseBudget, carryover = 0.
+ * Returns 0 for carryover (rollover disabled)
  */
 export function getCarryoverAmount(expenses: Expense[], currentMonthKey: string, baseBudget: number): number {
-  if (!baseBudget || baseBudget <= 0) return 0;
-  const prevMonthKey = getPreviousMonthKey(currentMonthKey);
-  const prevMonthSpent = getMonthTotalSpent(expenses, prevMonthKey);
-  const unspent = baseBudget - prevMonthSpent;
-  return Math.max(0, unspent);
+  return 0;
 }
 
 /**
- * Calculate effective budget for a target month (Base Budget + Unspent Carryover from previous month)
+ * Get effective budget for a target month (returns baseBudget directly)
  */
 export function getEffectiveBudget(expenses: Expense[], currentMonthKey: string, baseBudget: number): number {
-  const carryover = getCarryoverAmount(expenses, currentMonthKey, baseBudget);
-  return baseBudget + carryover;
+  return baseBudget || 0;
 }
 
 /**

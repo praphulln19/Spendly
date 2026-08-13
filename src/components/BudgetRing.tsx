@@ -77,13 +77,10 @@ export function BudgetRing({
   const monthExpenses = getExpensesForMonth(expenses, selectedMonthKey);
   const totalSpent = monthExpenses.reduce((acc, exp) => acc + exp.amount, 0);
 
-  const carryover = getCarryoverAmount(expenses, selectedMonthKey, monthlyBudget);
-  const effectiveBudget = monthlyBudget + carryover;
-
-  const remainingBudget = effectiveBudget - totalSpent;
+  const remainingBudget = monthlyBudget - totalSpent;
   const percentage =
-    effectiveBudget > 0
-      ? Math.min(100, Math.max(0, Math.round((totalSpent / effectiveBudget) * 100)))
+    monthlyBudget > 0
+      ? Math.min(100, Math.max(0, Math.round((totalSpent / monthlyBudget) * 100)))
       : 0;
 
   const { daysRemaining } = getDaysRemainingInMonth(selectedMonthKey);
@@ -210,25 +207,16 @@ export function BudgetRing({
 
           <div className="pt-2 border-t border-black/5 dark:border-white/10 space-y-1">
             <div className="flex items-center justify-between gap-4">
-              <span className="text-xs text-neutral-400 font-medium">Base Budget:</span>
+              <span className="text-xs text-neutral-400 font-medium">Spent:</span>
               <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                ₹{monthlyBudget.toLocaleString('en-IN')}
+                ₹{totalSpent.toLocaleString('en-IN')}
               </span>
             </div>
 
-            {carryover > 0 && (
-              <div className="flex items-center justify-between gap-4 text-emerald-600 dark:text-emerald-400">
-                <span className="text-xs font-medium flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" /> Rollover:
-                </span>
-                <span className="text-xs font-bold">+₹{carryover.toLocaleString('en-IN')}</span>
-              </div>
-            )}
-
             <div className="flex items-center justify-between gap-4 pt-1 border-t border-dashed border-black/5 dark:border-white/10">
-              <span className="text-xs text-neutral-500 font-bold">Total Budget:</span>
+              <span className="text-xs text-neutral-500 font-bold">Monthly Goal:</span>
               <span className="text-sm font-bold font-display text-neutral-900 dark:text-white">
-                ₹{effectiveBudget.toLocaleString('en-IN')}
+                ₹{monthlyBudget.toLocaleString('en-IN')}
               </span>
             </div>
           </div>

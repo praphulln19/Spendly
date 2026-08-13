@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { supabase } from '../lib/supabase';
-import { createExpense, deleteExpense, getExpenses } from '../services/expenseService';
+import { createExpense, deleteExpense, getExpenses, getUserBudget, saveUserBudget } from '../services/expenseService';
 import type { Expense, NewExpense } from '../types/expense';
 
 type ExpenseStore = {
@@ -51,6 +51,7 @@ function useExpenseData(): ExpenseStore {
   const setMonthlyBudget = (budget: number) => {
     setMonthlyBudgetState(budget);
     localStorage.setItem('spendly_monthly_budget', String(budget));
+    void saveUserBudget(budget);
   };
 
   const refresh = useCallback(async () => {
@@ -62,8 +63,15 @@ function useExpenseData(): ExpenseStore {
 
     setLoading(true);
     try {
-      const data = await getExpenses();
+      const [data, dbBudget] = await Promise.all([
+        getExpenses(),
+        getUserBudget(),
+      ]);
       setExpenses(data);
+      if (dbBudget !== null && dbBudget > 0) {
+        setMonthlyBudgetState(dbBudget);
+        localStorage.setItem('spendly_monthly_budget', String(dbBudget));
+      }
       setError(null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to load expenses.');

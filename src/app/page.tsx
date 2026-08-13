@@ -109,12 +109,7 @@ export default function DashboardPage() {
     () => monthExpenses.reduce((acc, exp) => acc + exp.amount, 0),
     [monthExpenses]
   );
-  const carryoverAmount = useMemo(
-    () => getCarryoverAmount(expenses, selectedMonthKey, monthlyBudget),
-    [expenses, selectedMonthKey, monthlyBudget]
-  );
-  const effectiveBudget = monthlyBudget + carryoverAmount;
-  const remainingBudget = effectiveBudget - currentMonthSpent;
+  const remainingBudget = monthlyBudget - currentMonthSpent;
 
   if (!ready) {
     return (
@@ -137,7 +132,6 @@ export default function DashboardPage() {
         monthlyBudget={monthlyBudget}
         totalSpent={currentMonthSpent}
         remainingBudget={remainingBudget}
-        carryoverAmount={carryoverAmount}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-8 pt-4 sm:pt-6">

@@ -26,16 +26,14 @@ interface AppleNavbarProps {
   monthlyBudget?: number;
   totalSpent?: number;
   remainingBudget?: number;
-  carryoverAmount?: number;
 }
 
 export function AppleNavbar({
   session,
   onOpenAddExpense,
-  monthlyBudget = 20000,
+  monthlyBudget = 0,
   totalSpent = 0,
   remainingBudget: customRemaining,
-  carryoverAmount = 0,
 }: AppleNavbarProps) {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
