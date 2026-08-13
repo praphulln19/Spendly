@@ -124,12 +124,16 @@ export function AppleNavbar({
         <div className="flex items-center gap-3 shrink-0">
           {session && (
             <div className="flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-2xl bg-black/5 dark:bg-white/10 text-neutral-700 dark:text-neutral-300">
-              <span>
-                Budget:{' '}
-                <strong className={isOverBudget ? 'text-red-500' : 'text-emerald-500'}>
-                  ₹{remainingBudget.toLocaleString('en-IN')} left
-                </strong>
-              </span>
+              {monthlyBudget > 0 ? (
+                <span>
+                  Budget:{' '}
+                  <strong className={isOverBudget ? 'text-red-500' : 'text-emerald-500'}>
+                    ₹{remainingBudget.toLocaleString('en-IN')} left
+                  </strong>
+                </span>
+              ) : (
+                <span className="text-neutral-400 font-medium">Budget Not Set</span>
+              )}
             </div>
           )}
 
@@ -261,9 +265,13 @@ export function AppleNavbar({
                 </div>
 
                 <div className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-xl bg-black/5 dark:bg-white/10 shrink-0">
-                  <span className={isOverBudget ? 'text-red-500' : 'text-emerald-500'}>
-                    Budget: ₹{remainingBudget.toLocaleString('en-IN')} left
-                  </span>
+                  {monthlyBudget > 0 ? (
+                    <span className={isOverBudget ? 'text-red-500' : 'text-emerald-500'}>
+                      Budget: ₹{remainingBudget.toLocaleString('en-IN')} left
+                    </span>
+                  ) : (
+                    <span className="text-neutral-400 font-medium">Budget Not Set</span>
+                  )}
                 </div>
               </div>
 

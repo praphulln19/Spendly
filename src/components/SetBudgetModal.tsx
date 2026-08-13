@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Target, IndianRupee } from 'lucide-react';
 
@@ -17,8 +17,15 @@ export function SetBudgetModal({
   onClose,
   onSave,
 }: SetBudgetModalProps) {
-  const [budgetInput, setBudgetInput] = useState(String(currentBudget));
+  const [budgetInput, setBudgetInput] = useState(currentBudget > 0 ? String(currentBudget) : '');
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setBudgetInput(currentBudget > 0 ? String(currentBudget) : '');
+      setError(null);
+    }
+  }, [isOpen, currentBudget]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

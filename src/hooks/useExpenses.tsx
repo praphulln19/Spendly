@@ -37,7 +37,7 @@ function useExpenseData(): ExpenseStore {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [monthlyBudget, setMonthlyBudgetState] = useState<number>(20000);
+  const [monthlyBudget, setMonthlyBudgetState] = useState<number>(0);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   useEffect(() => {

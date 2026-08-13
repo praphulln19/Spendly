@@ -72,6 +72,7 @@ export function getMonthTotalSpent(expenses: Expense[], monthKey: string): numbe
  * If previous month spent >= baseBudget, carryover = 0.
  */
 export function getCarryoverAmount(expenses: Expense[], currentMonthKey: string, baseBudget: number): number {
+  if (!baseBudget || baseBudget <= 0) return 0;
   const prevMonthKey = getPreviousMonthKey(currentMonthKey);
   const prevMonthSpent = getMonthTotalSpent(expenses, prevMonthKey);
   const unspent = baseBudget - prevMonthSpent;

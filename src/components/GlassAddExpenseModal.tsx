@@ -165,53 +165,29 @@ export function GlassAddExpenseModal({ isOpen, onClose, onAdd }: GlassAddExpense
                 </div>
               </div>
 
-              {/* Date with Auto-Detect & Custom Pick */}
+              {/* Date selection restricted to present date */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="flex items-center gap-1.5 text-xs font-bold text-neutral-700 dark:text-neutral-300">
                     <Calendar className="w-3.5 h-3.5 text-blue-500" />
                     <span>Date</span>
                   </label>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setDate(getTodayDate())}
-                      className={`px-2 py-0.5 text-[10px] font-bold rounded-lg transition-all ${
-                        date === getTodayDate()
-                          ? 'bg-blue-500 text-white shadow-xs'
-                          : 'bg-black/5 dark:bg-white/10 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-                      }`}
-                    >
-                      Today
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDate(getYesterdayDate())}
-                      className={`px-2 py-0.5 text-[10px] font-bold rounded-lg transition-all ${
-                        date === getYesterdayDate()
-                          ? 'bg-blue-500 text-white shadow-xs'
-                          : 'bg-black/5 dark:bg-white/10 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-                      }`}
-                    >
-                      Yesterday
-                    </button>
-                  </div>
+                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-blue-500 text-white shadow-xs">
+                    Today (Present)
+                  </span>
                 </div>
                 <input
                   type="date"
                   value={date}
+                  min={getTodayDate()}
+                  max={getTodayDate()}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-2xl bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/15 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  className="w-full px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-2xl bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/15 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 cursor-not-allowed opacity-90"
                   required
                 />
-                {date && date.slice(0, 7) < getTodayDate().slice(0, 7) && (
-                  <div className="mt-2 flex items-start gap-2 p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-[11px] font-medium leading-tight">
-                    <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                    <span>
-                      Logging expense for <strong>{formatMonthLabel(date.slice(0, 7))}</strong>. This updates that month's total and recalculates any carryover for the current month.
-                    </span>
-                  </div>
-                )}
+                <p className="mt-1.5 text-[11px] text-neutral-400 font-medium">
+                  Expenses are logged for today's date ({getTodayDate()}).
+                </p>
               </div>
 
               {/* Category selector grid */}
