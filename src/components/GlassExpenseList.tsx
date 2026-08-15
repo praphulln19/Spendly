@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { expenseTitle, type Expense, type ExpenseCategory } from '../types/expense';
 import { expenseCategories } from '../types/expense';
@@ -17,6 +18,8 @@ import {
   ArrowUpDown,
   CloudOff,
   Filter,
+  ChevronDown,
+  Check,
   X,
 } from 'lucide-react';
 
@@ -60,6 +63,41 @@ export function GlassExpenseList({
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'All'>('All');
   const [sortBy, setSortBy] = useState<SortOrder>('newest');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  /*
+   * The picker is portalled to <body>. Its natural home inside `.apple-card`
+   * cannot work: the card sets `overflow-hidden`, and its `backdrop-filter`
+   * makes it a containing block, so even `position: fixed` stays clipped by it.
+   */
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const MENU_WIDTH = 288;
+
+  const closeMenu = useCallback(() => setMenuPos(null), []);
+
+  const toggleMenu = () => {
+    if (menuPos) return closeMenu();
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const left = Math.min(Math.max(8, rect.left), window.innerWidth - MENU_WIDTH - 8);
+    // Flip above the trigger when there is not room below.
+    const wantsBelow = rect.bottom + 8 + 320 < window.innerHeight;
+    setMenuPos({ top: wantsBelow ? rect.bottom + 8 : Math.max(8, rect.top - 328), left });
+  };
+
+  useEffect(() => {
+    if (!menuPos) return;
+    const onKey = (event: KeyboardEvent) => event.key === 'Escape' && closeMenu();
+    window.addEventListener('keydown', onKey);
+    // The panel is anchored to a rect taken once, so any movement invalidates it.
+    window.addEventListener('scroll', closeMenu, true);
+    window.addEventListener('resize', closeMenu);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', closeMenu, true);
+      window.removeEventListener('resize', closeMenu);
+    };
+  }, [menuPos, closeMenu]);
 
   const filteredExpenses = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -174,8 +212,57 @@ export function GlassExpenseList({
     );
   };
 
+  const categoryMenu =
+    menuPos && typeof document !== 'undefined'
+      ? createPortal(
+          <>
+            <div className="fixed inset-0 z-[60]" onClick={closeMenu} aria-hidden="true" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: -4 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.14, ease: 'easeOut' }}
+              role="listbox"
+              aria-label="Category filter"
+              style={{ top: menuPos.top, left: menuPos.left, width: MENU_WIDTH }}
+              className="fixed z-[61] p-1.5 rounded-2xl bg-white dark:bg-neutral-900 border border-black/10 dark:border-white/15 shadow-2xl grid grid-cols-2 gap-1.5"
+            >
+              {(['All', ...expenseCategories] as const).map((cat) => {
+                const active = selectedCategory === cat;
+                const Icon = cat === 'All' ? Filter : categoryIcons[cat];
+                return (
+                  <button
+                    key={cat}
+                    role="option"
+                    aria-selected={active}
+                    onClick={() => {
+                      setSelectedCategory(cat);
+                      closeMenu();
+                    }}
+                    className={`h-10 px-3 rounded-2xl flex items-center gap-2 text-xs font-semibold transition-all active:scale-95 ${
+                      cat === 'All' ? 'col-span-2' : ''
+                    } ${
+                      active
+                        ? 'bg-black text-white dark:bg-white dark:text-black'
+                        : 'bg-black/[0.04] dark:bg-white/[0.07] text-neutral-700 dark:text-neutral-300'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 shrink-0 opacity-70" />
+                    <span className="flex-1 text-left truncate">
+                      {cat === 'All' ? 'All categories' : cat}
+                    </span>
+                    {active && <Check className="w-3.5 h-3.5 shrink-0" />}
+                  </button>
+                );
+              })}
+            </motion.div>
+          </>,
+          document.body
+        )
+      : null;
+
   return (
     <div className="apple-card w-full">
+      {categoryMenu}
       {showFilters && (
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-5">
           <div className="relative flex-1 min-w-0">
@@ -204,29 +291,30 @@ export function GlassExpenseList({
              * clipped by the card's own `overflow-hidden`, and a native control
              * also gives phones their proper full-screen picker.
              */}
-            <div
-              className={`h-10 px-3 rounded-2xl inline-flex items-center gap-1.5 text-xs font-bold flex-1 sm:flex-none transition-colors ${
-                selectedCategory !== 'All'
+            <button
+              ref={triggerRef}
+              onClick={toggleMenu}
+              aria-expanded={menuPos !== null}
+              aria-label="Filter by category"
+              className={`h-10 px-3 rounded-2xl inline-flex items-center gap-2 text-xs font-bold flex-1 sm:flex-none sm:min-w-[150px] transition-all active:scale-[0.98] ${
+                selectedCategory !== 'All' || menuPos
                   ? 'bg-black text-white dark:bg-white dark:text-black'
                   : 'bg-black/[0.05] dark:bg-white/[0.08] text-neutral-700 dark:text-neutral-300'
               }`}
             >
-              <Filter className="w-3.5 h-3.5 opacity-60 shrink-0" />
-              <select
-                value={selectedCategory}
-                onChange={(event) =>
-                  setSelectedCategory(event.target.value as ExpenseCategory | 'All')
-                }
-                aria-label="Filter by category"
-                className="bg-transparent border-none focus:outline-none text-xs font-bold cursor-pointer w-full min-w-0"
-              >
-                {(['All', ...expenseCategories] as const).map((cat) => (
-                  <option key={cat} value={cat} className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white">
-                    {cat === 'All' ? 'All categories' : cat}
-                  </option>
-                ))}
-              </select>
-            </div>
+              {(() => {
+                const Icon = selectedCategory === 'All' ? Filter : categoryIcons[selectedCategory];
+                return <Icon className="w-3.5 h-3.5 shrink-0 opacity-70" />;
+              })()}
+              <span className="flex-1 text-left truncate">
+                {selectedCategory === 'All' ? 'All categories' : selectedCategory}
+              </span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 shrink-0 opacity-50 transition-transform duration-200 ${
+                  menuPos ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
 
             <div className="h-10 px-3 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08] inline-flex items-center gap-1.5 text-xs font-bold text-neutral-700 dark:text-neutral-300 shrink-0">
               <ArrowUpDown className="w-3.5 h-3.5 opacity-60 shrink-0" />
