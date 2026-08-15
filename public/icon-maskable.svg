@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Spendly">
+  <!--
+    Maskable variant for Android, which crops the icon to whatever shape the
+    launcher uses. Two differences from icon.svg: the ground is full-bleed with
+    no corner radius (the platform supplies the shape), and the mark sits inside
+    the safe zone -- the centre circle of radius 205, i.e. 80% of the canvas.
+
+    The furthest corner of the mark is 193 from centre, so it survives a circular
+    crop with room to spare.
+  -->
+  <rect width="512" height="512" fill="#000000"/>
+  <g fill="#FFFFFF">
+    <rect x="112" y="160" width="76" height="224" rx="38"/>
+    <rect x="218" y="216" width="76" height="168" rx="38"/>
+    <rect x="324" y="272" width="76" height="112" rx="38"/>
+  </g>
+</svg>

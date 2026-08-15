@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-import { Wallet, AlertCircle, ShieldCheck } from 'lucide-react';
+import { AlertCircle, ShieldCheck } from 'lucide-react';
+import { SpendlyMark } from './SpendlyMark';
 
 export function AppleAuthScreen() {
   const [loading, setLoading] = useState<string | null>(null);
@@ -39,7 +40,7 @@ export function AppleAuthScreen() {
       >
         {/* Brand Icon */}
         <div className="w-16 h-16 rounded-3xl bg-black text-white dark:bg-white dark:text-black flex items-center justify-center mx-auto mb-4 shadow-xl">
-          <Wallet className="w-8 h-8" />
+          <SpendlyMark className="w-9 h-9" />
         </div>
 
         <h1 className="text-3xl font-black font-display text-neutral-900 dark:text-white mb-8 tracking-tight">

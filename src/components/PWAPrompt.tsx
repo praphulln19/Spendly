@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, X, Share, CheckCircle2, Wallet } from 'lucide-react';
+import { Download, X, Share, CheckCircle2 } from 'lucide-react';
+import { SpendlyMark } from './SpendlyMark';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -136,7 +137,7 @@ export function PWAPrompt() {
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-black dark:bg-white flex items-center justify-center text-white dark:text-black shadow-md shrink-0">
-                <Wallet className="w-5 h-5" />
+                <SpendlyMark className="w-6 h-6" />
               </div>
 
               <div>

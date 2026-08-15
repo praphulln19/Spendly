@@ -11,6 +11,10 @@ export const metadata: Metadata = {
   description:
     'Set what you have and how long it has to last. Spendly works out what you can spend today, and recalculates every morning.',
   manifest: '/manifest.json',
+  icons: {
+    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+    apple: [{ url: '/icon.svg' }],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -29,9 +33,6 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="apple-touch-icon" href="/icon.svg" />
-      </head>
       <body>
         <ThemeProvider>
           <SessionProvider>

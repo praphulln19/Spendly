@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase';
 import type { Session } from '@supabase/supabase-js';
 import type { Allowance } from '../utils/allowance';
 import { formatMoney } from '../utils/format';
+import { SpendlyMark } from './SpendlyMark';
 import {
   Wallet,
   Sun,
@@ -77,7 +78,7 @@ export function AppleNavbar({ session, allowance, onOpenAddExpense }: AppleNavba
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2.5 group shrink-0">
             <div className="w-10 h-10 rounded-2xl bg-black dark:bg-white flex items-center justify-center text-white dark:text-black shadow-md group-hover:scale-105 transition-transform duration-200">
-              <Wallet className="w-5 h-5" />
+              <SpendlyMark className="w-6 h-6" />
             </div>
             <span className="text-xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50 font-display">
               Spendly
@@ -186,7 +187,7 @@ export function AppleNavbar({ session, allowance, onOpenAddExpense }: AppleNavba
       <div className="lg:hidden max-w-5xl mx-auto flex items-center justify-between px-2 py-1">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-full bg-black dark:bg-white flex items-center justify-center text-white dark:text-black shadow-md">
-            <Wallet className="w-4 h-4" />
+            <SpendlyMark className="w-5 h-5" />
           </div>
           <span className="text-lg font-black font-display tracking-tight text-neutral-900 dark:text-white">
             Spendly
