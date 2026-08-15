@@ -16,8 +16,7 @@ import {
   FileText,
   ArrowUpDown,
   CloudOff,
-  ChevronDown,
-  Check,
+  Filter,
   X,
 } from 'lucide-react';
 
@@ -61,7 +60,6 @@ export function GlassExpenseList({
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'All'>('All');
   const [sortBy, setSortBy] = useState<SortOrder>('newest');
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [categoryOpen, setCategoryOpen] = useState(false);
 
   const filteredExpenses = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -201,64 +199,37 @@ export function GlassExpenseList({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Category filter as a picker, not a scrolling strip */}
-            <div className="relative flex-1 sm:flex-none">
-              <button
-                onClick={() => setCategoryOpen((open) => !open)}
-                aria-expanded={categoryOpen}
-                className={`w-full sm:w-auto h-10 px-3 rounded-2xl inline-flex items-center justify-between gap-2 text-xs font-bold transition-all ${
-                  selectedCategory !== 'All'
-                    ? 'bg-black text-white dark:bg-white dark:text-black'
-                    : 'bg-black/[0.05] dark:bg-white/[0.08] text-neutral-700 dark:text-neutral-300'
-                }`}
+            {/*
+             * Both filters are native selects. A custom popover here was being
+             * clipped by the card's own `overflow-hidden`, and a native control
+             * also gives phones their proper full-screen picker.
+             */}
+            <div
+              className={`h-10 px-3 rounded-2xl inline-flex items-center gap-1.5 text-xs font-bold flex-1 sm:flex-none transition-colors ${
+                selectedCategory !== 'All'
+                  ? 'bg-black text-white dark:bg-white dark:text-black'
+                  : 'bg-black/[0.05] dark:bg-white/[0.08] text-neutral-700 dark:text-neutral-300'
+              }`}
+            >
+              <Filter className="w-3.5 h-3.5 opacity-60 shrink-0" />
+              <select
+                value={selectedCategory}
+                onChange={(event) =>
+                  setSelectedCategory(event.target.value as ExpenseCategory | 'All')
+                }
+                aria-label="Filter by category"
+                className="bg-transparent border-none focus:outline-none text-xs font-bold cursor-pointer w-full min-w-0"
               >
-                <span className="truncate">{selectedCategory}</span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 opacity-60 transition-transform ${
-                    categoryOpen ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
-
-              <AnimatePresence>
-                {categoryOpen && (
-                  <>
-                    <div className="fixed inset-0 z-20" onClick={() => setCategoryOpen(false)} />
-                    <motion.div
-                      initial={{ opacity: 0, y: -6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      transition={{ duration: 0.14 }}
-                      className="absolute right-0 top-full mt-2 z-30 w-[260px] p-1.5 rounded-2xl bg-white dark:bg-neutral-900 border border-black/10 dark:border-white/15 shadow-2xl grid grid-cols-2 gap-1"
-                    >
-                      {(['All', ...expenseCategories] as const).map((cat) => {
-                        const active = selectedCategory === cat;
-                        return (
-                          <button
-                            key={cat}
-                            onClick={() => {
-                              setSelectedCategory(cat);
-                              setCategoryOpen(false);
-                            }}
-                            className={`h-9 px-2.5 rounded-xl inline-flex items-center gap-1.5 text-[11px] font-semibold transition-colors ${
-                              active
-                                ? 'bg-black text-white dark:bg-white dark:text-black'
-                                : 'text-neutral-600 dark:text-neutral-300 hover:bg-black/5 dark:hover:bg-white/10'
-                            }`}
-                          >
-                            <span className="truncate flex-1 text-left">{cat}</span>
-                            {active && <Check className="w-3 h-3 shrink-0" />}
-                          </button>
-                        );
-                      })}
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
+                {(['All', ...expenseCategories] as const).map((cat) => (
+                  <option key={cat} value={cat} className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white">
+                    {cat === 'All' ? 'All categories' : cat}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div className="h-10 px-3 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08] inline-flex items-center gap-1.5 text-xs font-bold text-neutral-700 dark:text-neutral-300">
-              <ArrowUpDown className="w-3.5 h-3.5 opacity-60" />
+            <div className="h-10 px-3 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08] inline-flex items-center gap-1.5 text-xs font-bold text-neutral-700 dark:text-neutral-300 shrink-0">
+              <ArrowUpDown className="w-3.5 h-3.5 opacity-60 shrink-0" />
               <select
                 value={sortBy}
                 onChange={(event) => setSortBy(event.target.value as SortOrder)}
@@ -266,7 +237,7 @@ export function GlassExpenseList({
                 className="bg-transparent border-none focus:outline-none text-xs font-bold cursor-pointer"
               >
                 {(Object.keys(SORT_LABELS) as SortOrder[]).map((key) => (
-                  <option key={key} value={key} className="dark:bg-neutral-900">
+                  <option key={key} value={key} className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white">
                     {SORT_LABELS[key]}
                   </option>
                 ))}
