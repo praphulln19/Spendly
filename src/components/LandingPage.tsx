@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import {
   AlertCircle,
   CalendarRange,
+  CheckCircle2,
   CloudOff,
   Keyboard,
   LineChart,
@@ -76,7 +77,7 @@ const FEATURES = [
   {
     icon: CalendarRange,
     title: 'Budgets built around your money',
-    body: 'Set an amount and the day it must last until — a month, a week, or until your allowance lands on the fifth.',
+    body: 'Set an amount and the day it must last until: a month, a week, or until your allowance lands on the fifth.',
   },
   {
     icon: Scale,
@@ -122,8 +123,8 @@ export function LandingPage() {
           transition: { duration: 0.5, delay, ease: 'easeOut' as const },
         };
 
-  const AuthButtons = ({ compact = false }: { compact?: boolean }) => (
-    <div className={`flex flex-col sm:flex-row gap-3 ${compact ? 'max-w-md' : 'max-w-lg'}`}>
+  const AuthButtons = () => (
+    <div className="flex flex-col sm:flex-row gap-3 max-w-lg">
       <button
         onClick={() => handleOAuthSignIn('google')}
         disabled={loading !== null}
@@ -181,7 +182,7 @@ export function LandingPage() {
             </h1>
             <p className="mt-5 text-base sm:text-lg text-neutral-500 dark:text-neutral-400 max-w-xl leading-relaxed">
               Other trackers tell you what you already spent, which you cannot change. Spendly
-              divides what you have across the days it has to cover and gives you one number —
+              divides what you have across the days it has to cover and gives you one number,
               recalculated every morning from what you actually did.
             </p>
 
@@ -200,18 +201,18 @@ export function LandingPage() {
             </p>
           </motion.div>
 
-          {/* Product preview — the figure lives here, clearly framed as the app */}
+          {/* Product preview: the figure lives here, clearly framed as the app */}
           <motion.div {...rise(0.12)} className="relative">
             <div className="apple-card shadow-xl">
               <div className="flex items-baseline justify-between gap-4 mb-4">
                 <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-400">
                   Day 15 of 31
                 </p>
-                <p className="text-[10px] font-semibold text-neutral-400">1 – 31 Aug</p>
+                <p className="text-[10px] font-semibold text-neutral-400">1 to 31 Aug</p>
               </div>
 
               <div className="font-display font-black tabular-nums leading-[0.9] tracking-[-0.045em] text-[3.25rem] text-neutral-900 dark:text-white">
-                <span className="mr-1">₹</span>151
+                <span className="mr-1">₹</span>99
               </div>
               <p className="mt-1.5 text-sm font-bold text-neutral-500 dark:text-neutral-400">
                 left to spend today
@@ -222,14 +223,20 @@ export function LandingPage() {
                 <DayStrip cells={buildDemoCells()} />
               </div>
 
-              <div className="mt-5 flex items-start gap-3 p-3.5 rounded-2xl border bg-orange-500/10 border-orange-500/20">
-                <RefreshCw className="w-4 h-4 mt-0.5 shrink-0 text-orange-500" />
+              {/*
+               * The sample figures reconcile: day 15 of 31 leaves 17 days
+               * including today, ₹261 × 17 = ₹4,437 at the day's start, less
+               * ₹162 spent leaves ₹99 today and ₹4,275 overall, which spread
+               * across the 16 days after today is ₹267.
+               */}
+              <div className="mt-5 flex items-start gap-3 p-3.5 rounded-2xl border bg-emerald-500/10 border-emerald-500/20">
+                <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-500" />
                 <div>
-                  <p className="text-sm font-bold leading-snug text-orange-600 dark:text-orange-400">
-                    ₹110 over for today
+                  <p className="text-sm font-bold leading-snug text-emerald-600 dark:text-emerald-400">
+                    On track
                   </p>
                   <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mt-0.5">
-                    Tomorrow drops to ₹243 to absorb it. Nothing is lost if you ease off.
+                    ₹4,275 left for the rest of the month. Stop here and tomorrow lifts to ₹267.
                   </p>
                 </div>
               </div>
@@ -247,7 +254,7 @@ export function LandingPage() {
           </h2>
           <p className="mt-3 text-base text-neutral-500 dark:text-neutral-400 max-w-2xl leading-relaxed">
             Each bar is sized by how much of <em>that day&apos;s own</em> allowance it used, so a run
-            of heavy days is the visible explanation for a smaller number today — not a rule you
+            of heavy days is the visible explanation for a smaller number today, not a rule you
             have to take on trust.
           </p>
           <div className="apple-card mt-7">
@@ -280,7 +287,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* How it works — a real sequence, so it is numbered */}
+        {/* How it works: a real sequence, so it is numbered */}
         <section className="mt-20 lg:mt-28">
           <h2 className="text-2xl sm:text-3xl font-black font-display tracking-tight text-neutral-900 dark:text-white">
             The whole loop
@@ -302,20 +309,7 @@ export function LandingPage() {
           </ol>
         </section>
 
-        {/* Closing */}
-        <section className="mt-20 lg:mt-28 apple-card text-center py-12 sm:py-14">
-          <h2 className="text-2xl sm:text-3xl font-black font-display tracking-tight text-neutral-900 dark:text-white text-balance max-w-xl mx-auto">
-            Stop guessing whether you can afford it.
-          </h2>
-          <p className="mt-3 text-base text-neutral-500 dark:text-neutral-400 max-w-lg mx-auto leading-relaxed">
-            Set an amount and an end date. Spendly does the arithmetic every morning from then on.
-          </p>
-          <div className="mt-8 flex justify-center">
-            <AuthButtons compact />
-          </div>
-        </section>
-
-        <footer className="mt-14 pt-8 border-t border-black/5 dark:border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <footer className="mt-20 lg:mt-28 pt-8 border-t border-black/5 dark:border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <p className="inline-flex items-start gap-2 text-xs text-neutral-400 font-medium max-w-lg leading-relaxed">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
             Your expenses are readable only by your own account. That rule is enforced by the
