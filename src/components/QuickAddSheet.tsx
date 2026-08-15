@@ -14,11 +14,14 @@ import { addDays, formatDayLabel, formatDaysOfAllowance, todayISO } from '../uti
 import { formatMoney } from '../utils/format';
 
 /*
- * Logging a spend is the thing people do several times a day, standing up, one
- * handed. So: amount first on a numpad, and every other field carries a sensible
- * default. Category comes preselected from last time, Need/Want is inferred from
- * the category, the note is collapsed behind a tap, and the day defaults to
- * today. Two taps covers the common case; nothing else is required.
+ * Logging a spend is done several times a day, standing up, one handed.
+ *
+ * The amount leads, at the same weight the Today screen gives the allowance, so
+ * the sheet reads as one number being built. Everything else is a default that
+ * only needs touching in the exception: category is preselected from last time,
+ * Need/Want follows the category, the note is behind a tap, and the day is
+ * today. Type, day and note share one row at fixed proportions rather than
+ * stacking three rows of differently shaped controls.
  */
 
 interface QuickAddSheetProps {
@@ -26,11 +29,16 @@ interface QuickAddSheetProps {
   onClose: () => void;
   onAdd: (expense: NewExpense) => Promise<void>;
   defaultCategory: ExpenseCategory;
-  /** Used to price the entry in days of allowance while it is being typed */
+  /** Prices the entry in days of allowance while it is typed */
   todayBudget: number;
 }
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0'] as const;
+
+const EDGE_FADE = {
+  maskImage: 'linear-gradient(to right, black calc(100% - 28px), transparent)',
+  WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 28px), transparent)',
+};
 
 export function QuickAddSheet({
   isOpen,
@@ -50,6 +58,7 @@ export function QuickAddSheet({
   const [error, setError] = useState<string | null>(null);
 
   const amount = Number(digits || '0');
+  const valid = amount > 0;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -65,9 +74,9 @@ export function QuickAddSheet({
   }, [isOpen, defaultCategory]);
 
   const press = useCallback((key: string) => {
+    setError(null);
     setDigits((current) => {
       const next = current + key;
-      // 7 digits is ₹9,999,999 -- well past anything a real entry needs.
       if (next.replace(/^0+/, '').length > 7) return current;
       return next.replace(/^0+(?=\d)/, '');
     });
@@ -77,12 +86,11 @@ export function QuickAddSheet({
 
   const chooseCategory = (next: ExpenseCategory) => {
     setCategory(next);
-    // Respect an explicit Need/Want choice; otherwise follow the category.
     if (!typeTouched) setType(categoryDefaultType[next]);
   };
 
   const submit = useCallback(async () => {
-    if (amount <= 0) {
+    if (!valid) {
       setError('Enter an amount first.');
       return;
     }
@@ -95,9 +103,8 @@ export function QuickAddSheet({
       setError(cause instanceof Error ? cause.message : 'Could not save that expense.');
       setSaving(false);
     }
-  }, [amount, date, category, note, type, onAdd, onClose]);
+  }, [valid, date, category, note, amount, type, onAdd, onClose]);
 
-  // Desktop users have a keyboard in front of them; let them use it.
   useEffect(() => {
     if (!isOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -110,12 +117,6 @@ export function QuickAddSheet({
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isOpen, press, backspace, submit, onClose]);
-
-  const dayOptions = [
-    { value: todayISO(), label: 'Today' },
-    { value: addDays(todayISO(), -1), label: 'Yesterday' },
-    { value: addDays(todayISO(), -2), label: formatDayLabel(addDays(todayISO(), -2)) },
-  ];
 
   return (
     <AnimatePresence>
@@ -130,61 +131,74 @@ export function QuickAddSheet({
           />
 
           <motion.div
-            initial={{ opacity: 0, y: 40, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 40, scale: 0.98 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 340 }}
-            className="relative z-10 w-full sm:max-w-md bg-white dark:bg-neutral-900 border border-black/10 dark:border-white/15 rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl max-h-[92vh] overflow-y-auto"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            transition={{ type: 'spring', damping: 30, stiffness: 350 }}
+            className="relative z-10 w-full sm:max-w-[380px] bg-white dark:bg-neutral-900 border border-black/10 dark:border-white/15 rounded-t-[28px] sm:rounded-[28px] px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:pb-5 shadow-2xl max-h-[95vh] overflow-y-auto scrollbar-none"
           >
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h2 className="text-base font-bold font-display text-neutral-900 dark:text-white">
-                  Add expense
-                </h2>
-                <p className="text-[11px] font-semibold text-neutral-400">
-                  {formatDayLabel(date)} · {category}
-                </p>
-              </div>
+            {/* Grab handle, mobile only */}
+            <div className="sm:hidden w-9 h-1 rounded-full bg-black/15 dark:bg-white/20 mx-auto mb-3" />
+
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-sm font-bold font-display text-neutral-900 dark:text-white">
+                Add expense
+              </h2>
               <button
                 onClick={onClose}
                 aria-label="Close"
-                className="w-9 h-9 rounded-2xl bg-black/5 dark:bg-white/10 flex items-center justify-center text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                className="w-8 h-8 -mr-1 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Amount */}
-            <div className="text-center py-3">
+            {/* Amount — the hero, same treatment as the Today figure */}
+            <div className="text-center pt-2 pb-4">
               <div
-                className={`font-display font-black tabular-nums tracking-[-0.04em] text-5xl ${
-                  amount > 0 ? 'text-neutral-900 dark:text-white' : 'text-neutral-300 dark:text-neutral-700'
+                className={`font-display font-black tabular-nums leading-none tracking-[-0.045em] text-[3.25rem] transition-colors ${
+                  valid ? 'text-neutral-900 dark:text-white' : 'text-neutral-200 dark:text-neutral-700'
                 }`}
               >
-                <span className="text-[0.45em] font-bold align-top mr-0.5 tracking-normal">₹</span>
+                <span className="text-[0.5em] font-bold mr-1 tracking-normal">₹</span>
                 {amount.toLocaleString('en-IN')}
               </div>
-              <p className="mt-1 h-4 text-[11px] font-semibold text-neutral-400">
-                {amount > 0 && todayBudget > 0
-                  ? `${formatDaysOfAllowance(amount, todayBudget)} of allowance`
+              <p className="mt-2 h-4 text-[11px] font-semibold text-neutral-400">
+                {valid && todayBudget > 0
+                  ? `${formatDaysOfAllowance(amount, todayBudget)} of today's allowance`
                   : ''}
               </p>
             </div>
 
-            {error && (
-              <div className="mb-3 p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold">
-                {error}
+            {/* Category — fades at the edge so it reads as scrollable */}
+            <div className="-mx-5 px-5" style={EDGE_FADE}>
+              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
+                {expenseCategories.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => chooseCategory(cat)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
+                      category === cat
+                        ? 'bg-black text-white dark:bg-white dark:text-black'
+                        : 'bg-black/[0.05] dark:bg-white/[0.08] text-neutral-500 dark:text-neutral-400'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+                <span className="shrink-0 w-6" aria-hidden="true" />
               </div>
-            )}
+            </div>
 
-            {/* Numpad */}
-            <div className="grid grid-cols-3 gap-2">
+            {/* Numpad — narrower than the sheet so keys are not squat */}
+            <div className="grid grid-cols-3 gap-2 max-w-[300px] mx-auto my-4">
               {KEYS.map((key) => (
                 <button
                   key={key}
                   type="button"
                   onClick={() => press(key)}
-                  className="py-3.5 text-xl font-bold font-display tabular-nums rounded-2xl bg-black/[0.04] dark:bg-white/[0.07] text-neutral-900 dark:text-white hover:bg-black/10 dark:hover:bg-white/15 active:scale-95 transition-all"
+                  className="h-[52px] text-[19px] font-bold font-display tabular-nums rounded-2xl bg-black/[0.04] dark:bg-white/[0.07] text-neutral-900 dark:text-white active:bg-black/10 dark:active:bg-white/15 active:scale-95 transition-all"
                 >
                   {key}
                 </button>
@@ -193,33 +207,16 @@ export function QuickAddSheet({
                 type="button"
                 onClick={backspace}
                 aria-label="Delete last digit"
-                className="py-3.5 rounded-2xl bg-black/[0.04] dark:bg-white/[0.07] text-neutral-500 hover:bg-black/10 dark:hover:bg-white/15 active:scale-95 transition-all flex items-center justify-center"
+                className="h-[52px] rounded-2xl text-neutral-400 active:bg-black/10 dark:active:bg-white/15 active:scale-95 transition-all flex items-center justify-center"
               >
-                <Delete className="w-5 h-5" />
+                <Delete className="w-[22px] h-[22px]" />
               </button>
             </div>
 
-            {/* Category */}
-            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none mt-4 -mx-1 px-1 pb-1">
-              {expenseCategories.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => chooseCategory(cat)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-                    category === cat
-                      ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm'
-                      : 'bg-black/5 dark:bg-white/10 text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-
-            {/* Need / Want + day */}
-            <div className="flex items-center gap-2 mt-3">
-              <div className="grid grid-cols-2 p-0.5 rounded-2xl bg-black/5 dark:bg-white/10 flex-1">
+            {/* One meta row, fixed proportions: type flexes, day sizes to content,
+                note is a square icon. */}
+            <div className="flex items-stretch gap-2 h-10">
+              <div className="grid grid-cols-2 flex-1 p-0.5 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08]">
                 {(['Need', 'Want'] as const).map((option) => (
                   <button
                     key={option}
@@ -228,7 +225,7 @@ export function QuickAddSheet({
                       setType(option);
                       setTypeTouched(true);
                     }}
-                    className={`py-1.5 text-xs font-bold rounded-xl transition-all ${
+                    className={`text-xs font-bold rounded-[14px] transition-all ${
                       type === option
                         ? option === 'Need'
                           ? 'bg-white dark:bg-neutral-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
@@ -241,17 +238,32 @@ export function QuickAddSheet({
                 ))}
               </div>
 
+              <label className="relative inline-flex items-center gap-1.5 px-3 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08] text-xs font-bold text-neutral-600 dark:text-neutral-300 cursor-pointer whitespace-nowrap">
+                <Calendar className="w-3.5 h-3.5 text-neutral-400" />
+                <span>{formatDayLabel(date)}</span>
+                <input
+                  type="date"
+                  value={date}
+                  max={todayISO()}
+                  min={addDays(todayISO(), -365)}
+                  onChange={(event) => event.target.value && setDate(event.target.value)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  aria-label="Expense date"
+                />
+              </label>
+
               <button
                 type="button"
                 onClick={() => setNoteOpen((open) => !open)}
-                className={`px-3 py-2 rounded-2xl text-xs font-bold transition-all inline-flex items-center gap-1.5 ${
+                aria-label={noteOpen ? 'Hide note' : 'Add a note'}
+                aria-pressed={noteOpen}
+                className={`w-10 shrink-0 rounded-2xl flex items-center justify-center transition-all ${
                   noteOpen || note
                     ? 'bg-blue-500/10 text-blue-500'
-                    : 'bg-black/5 dark:bg-white/10 text-neutral-500'
+                    : 'bg-black/[0.05] dark:bg-white/[0.08] text-neutral-400'
                 }`}
               >
-                <MessageSquarePlus className="w-3.5 h-3.5" />
-                <span>Note</span>
+                <MessageSquarePlus className="w-4 h-4" />
               </button>
             </div>
 
@@ -259,51 +271,29 @@ export function QuickAddSheet({
               <input
                 type="text"
                 autoFocus
-                placeholder="What was it for? (optional)"
+                placeholder="What was it for?"
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
                 maxLength={500}
-                className="input-field mt-2"
+                className="w-full mt-2 px-4 h-10 text-sm font-medium rounded-2xl bg-black/[0.05] dark:bg-white/[0.08] border-0 text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
               />
             )}
 
-            {/* Day — backfilling matters: an unlogged day silently inflates every
-                later allowance. */}
-            <div className="flex items-center gap-1.5 mt-3">
-              {dayOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setDate(option.value)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                    date === option.value
-                      ? 'bg-black text-white dark:bg-white dark:text-black'
-                      : 'bg-black/5 dark:bg-white/10 text-neutral-500'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-              <label className="relative ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/10 text-neutral-500 text-xs font-semibold cursor-pointer">
-                <Calendar className="w-3.5 h-3.5" />
-                <span>Pick</span>
-                <input
-                  type="date"
-                  value={date}
-                  max={todayISO()}
-                  onChange={(event) => event.target.value && setDate(event.target.value)}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                />
-              </label>
-            </div>
+            {error && (
+              <p className="mt-2 text-xs font-semibold text-red-500 text-center">{error}</p>
+            )}
 
             <button
               type="button"
               onClick={submit}
-              disabled={saving || amount <= 0}
-              className="w-full mt-4 py-3.5 rounded-2xl bg-black text-white dark:bg-white dark:text-black font-bold text-sm shadow-sm active:scale-[0.98] transition-all disabled:opacity-40 disabled:active:scale-100"
+              disabled={saving || !valid}
+              className={`w-full mt-3 h-[52px] rounded-2xl font-bold text-sm transition-all ${
+                valid
+                  ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm active:scale-[0.98]'
+                  : 'bg-black/[0.05] dark:bg-white/[0.08] text-neutral-400 cursor-not-allowed'
+              }`}
             >
-              {saving ? 'Saving…' : amount > 0 ? `Add ${formatMoney(amount)}` : 'Add expense'}
+              {saving ? 'Saving…' : valid ? `Add ${formatMoney(amount)}` : 'Enter an amount'}
             </button>
           </motion.div>
         </div>
