@@ -3,10 +3,11 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Wallet } from 'lucide-react';
 import type { Allowance } from '../utils/allowance';
-import { buildDayStrip, formatPeriodLabel } from '../utils/allowance';
+import { buildBudgetMessage, buildDayStrip, formatPeriodLabel } from '../utils/allowance';
 import type { Expense } from '../types/expense';
 import { formatMoney } from '../utils/format';
 import { DayStrip } from './DayStrip';
+import { BudgetAlert } from './BudgetAlert';
 
 interface TodayHeroProps {
   allowance: Allowance | null;
@@ -46,9 +47,10 @@ export function TodayHero({ allowance, expenses, onSetBudget }: TodayHeroProps) 
     );
   }
 
-  const { phase, status, todayLeft, todayBudget, spentToday, remaining, daysRemaining } = allowance;
+  const { phase, todayLeft, todayBudget, spentToday, remaining } = allowance;
   const isOver = todayLeft < 0;
   const cells = buildDayStrip(allowance.period, expenses);
+  const message = buildBudgetMessage(allowance);
 
   if (phase === 'upcoming') {
     return (
@@ -90,15 +92,6 @@ export function TodayHero({ allowance, expenses, onSetBudget }: TodayHeroProps) 
     );
   }
 
-  const statusLine =
-    status === 'over-period'
-      ? `You are ${formatMoney(Math.abs(remaining))} past the whole budget`
-      : isOver
-      ? `${formatMoney(Math.abs(todayLeft))} past today — tomorrow drops to cover it`
-      : status === 'caution'
-      ? `Most of today is gone`
-      : `${formatMoney(remaining)} left for ${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'}`;
-
   return (
     <section className="apple-card">
       <div className="flex items-baseline justify-between gap-4 mb-5">
@@ -136,20 +129,16 @@ export function TodayHero({ allowance, expenses, onSetBudget }: TodayHeroProps) 
         <DayStrip cells={cells} />
       </div>
 
-      <div className="mt-5 pt-4 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
-        <span
-          className={`font-bold ${
-            status === 'over-period' || isOver
-              ? 'text-red-500'
-              : status === 'caution'
-              ? 'text-amber-500'
-              : 'text-emerald-500'
-          }`}
-        >
-          {statusLine}
-        </span>
+      <div className="mt-5">
+        <BudgetAlert message={message} />
+      </div>
+
+      <div className="mt-3 pt-3 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-x-5 gap-y-1 text-xs">
         <span className="text-neutral-400 font-medium tabular-nums">
           Spent today {formatMoney(spentToday)}
+        </span>
+        <span className="text-neutral-400 font-medium tabular-nums">
+          {formatMoney(remaining)} left of {formatMoney(allowance.spendable)}
         </span>
       </div>
     </section>

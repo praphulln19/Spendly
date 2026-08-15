@@ -1,5 +1,6 @@
 import type { Expense } from '../types/expense';
 import type { BudgetPeriod, NewBudgetPeriod } from '../types/budget';
+import { formatMoney } from './format';
 
 /* -------------------------------------------------------------------------- */
 /* Date helpers                                                                */
@@ -272,6 +273,150 @@ export function formatDaysOfAllowance(amount: number, todayBudget: number): stri
   if (days <= 0) return '—';
   if (days < 0.1) return '<0.1 days';
   return `${days.toFixed(1)} ${days >= 0.95 && days < 1.05 ? 'day' : 'days'}`;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Coaching                                                                    */
+/* -------------------------------------------------------------------------- */
+
+export type BudgetTone = 'critical' | 'warning' | 'caution' | 'good' | 'great' | 'neutral';
+
+export interface BudgetMessage {
+  tone: BudgetTone;
+  title: string;
+  detail: string;
+}
+
+/** What today is worth tomorrow, if today's spending stops here. */
+export function tomorrowBudget(allowance: Allowance): number {
+  if (allowance.daysRemaining <= 1) return 0;
+  return Math.max(0, (allowance.spendable - allowance.spentTotal) / (allowance.daysRemaining - 1));
+}
+
+/**
+ * One plain-language read on where the budget stands.
+ *
+ * Ordered by severity so the most consequential thing is the only thing said --
+ * a person mid-spend gets one sentence, not a dashboard. Warnings name the
+ * remedy rather than just the problem, and going well is stated as plainly as
+ * going badly, because a budget that only ever scolds gets deleted.
+ */
+export function buildBudgetMessage(allowance: Allowance, now: Date = new Date()): BudgetMessage {
+  const {
+    phase,
+    todayLeft,
+    todayBudget,
+    remaining,
+    spentToday,
+    spentTotal,
+    spendable,
+    daysRemaining,
+    daysTotal,
+    dayIndex,
+    averagePerDay,
+  } = allowance;
+
+  const nextDay = tomorrowBudget(allowance);
+
+  if (phase === 'upcoming') {
+    return {
+      tone: 'neutral',
+      title: 'This budget has not started yet',
+      detail: `It runs for ${daysTotal} days at ${formatMoney(todayBudget)} a day.`,
+    };
+  }
+
+  if (phase === 'ended') {
+    return remaining >= 0
+      ? {
+          tone: 'great',
+          title: `Finished with ${formatMoney(remaining)} to spare`,
+          detail: `You spent ${formatMoney(spentTotal)} of ${formatMoney(spendable)}. Start the next budget to keep going.`,
+        }
+      : {
+          tone: 'critical',
+          title: `Ended ${formatMoney(Math.abs(remaining))} over`,
+          detail: 'Worth setting the next one a little higher, or trimming where it went.',
+        };
+  }
+
+  if (remaining < 0) {
+    return {
+      tone: 'critical',
+      title: `${formatMoney(Math.abs(remaining))} past this budget`,
+      detail:
+        daysRemaining > 1
+          ? `There are still ${daysRemaining} days to go. Anything more has to come from somewhere else.`
+          : 'Today is the last day, so this is where it lands.',
+    };
+  }
+
+  if (todayLeft < 0) {
+    return {
+      tone: 'warning',
+      title: `${formatMoney(Math.abs(todayLeft))} over for today`,
+      detail:
+        nextDay > 0
+          ? `Tomorrow drops to ${formatMoney(nextDay)} to absorb it. Nothing is lost if you ease off.`
+          : 'This is the last day of the budget.',
+    };
+  }
+
+  // At the current average, does the money run out before the days do?
+  const daysOfMoneyLeft = averagePerDay > 0 ? remaining / averagePerDay : Infinity;
+  if (daysOfMoneyLeft < daysRemaining - 0.5 && dayIndex >= 2) {
+    const sustainable = daysRemaining > 0 ? remaining / daysRemaining : 0;
+    return {
+      tone: 'warning',
+      title: `On pace to run out ${formatDayLabel(
+        addDays(todayISO(now), Math.max(0, Math.floor(daysOfMoneyLeft))),
+        now
+      )}`,
+      detail: `You are averaging ${formatMoney(averagePerDay)} a day. About ${formatMoney(
+        sustainable
+      )} a day gets you to the end.`,
+    };
+  }
+
+  if (todayBudget > 0 && todayLeft < todayBudget * 0.2) {
+    return {
+      tone: 'caution',
+      title: `Only ${formatMoney(todayLeft)} left today`,
+      detail:
+        nextDay > 0
+          ? `Today resets to ${formatMoney(nextDay)} tomorrow.`
+          : 'This is the last day of the budget.',
+    };
+  }
+
+  // Under an even pace by a full day's worth or more.
+  const expectedByNow = daysTotal > 0 ? (spendable / daysTotal) * dayIndex : 0;
+  const ahead = expectedByNow - spentTotal;
+  if (ahead >= todayBudget && dayIndex >= 2) {
+    return {
+      tone: 'great',
+      title: `You are ${formatMoney(ahead)} ahead of pace`,
+      detail: `That underspending is why today is worth ${formatMoney(
+        todayBudget
+      )}. Hold this and you finish with roughly ${formatMoney(Math.max(0, ahead))} spare.`,
+    };
+  }
+
+  if (spentToday === 0) {
+    return {
+      tone: 'good',
+      title: 'Nothing spent yet today',
+      detail: `The whole ${formatMoney(todayBudget)} is yours, and skipping it lifts tomorrow.`,
+    };
+  }
+
+  return {
+    tone: 'good',
+    title: 'On track',
+    detail: `${formatMoney(remaining)} left for ${daysRemaining} ${
+      daysRemaining === 1 ? 'day' : 'days'
+    }, and today is still ${formatMoney(todayLeft)} clear.`,
+  };
 }
 
 /* -------------------------------------------------------------------------- */

@@ -16,9 +16,27 @@ import {
   FileText,
   ArrowUpDown,
   CloudOff,
+  ChevronDown,
+  Check,
+  X,
 } from 'lucide-react';
 
+/*
+ * A ledger reads best the way a bank statement does: grouped by day, one line
+ * per entry, amounts in a single right-hand column your eye can run down.
+ *
+ * The previous version gave every entry a full card with its own padding, which
+ * meant one line of information cost ~100px of height and the date was repeated
+ * on every row. Grouping by day states the date once and lets the rows compress.
+ */
+
 type SortOrder = 'newest' | 'highest' | 'lowest';
+
+const SORT_LABELS: Record<SortOrder, string> = {
+  newest: 'Newest',
+  highest: 'Highest',
+  lowest: 'Lowest',
+};
 
 interface GlassExpenseListProps {
   expenses: Expense[];
@@ -26,7 +44,6 @@ interface GlassExpenseListProps {
   onOpenAddModal?: () => void;
   onExportCSV?: (rows: Expense[]) => void;
   onExportPDF?: (rows: Expense[]) => void;
-  /** Reports the filtered set so callers can export exactly what is on screen */
   onVisibleChange?: (rows: Expense[]) => void;
   showFilters?: boolean;
 }
@@ -44,6 +61,7 @@ export function GlassExpenseList({
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'All'>('All');
   const [sortBy, setSortBy] = useState<SortOrder>('newest');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [categoryOpen, setCategoryOpen] = useState(false);
 
   const filteredExpenses = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -59,7 +77,6 @@ export function GlassExpenseList({
       .sort((a, b) => {
         if (sortBy === 'highest') return b.amount - a.amount;
         if (sortBy === 'lowest') return a.amount - b.amount;
-        // Same-day entries fall back to entry order, newest first.
         if (a.date === b.date) return b.created_at.localeCompare(a.created_at);
         return b.date.localeCompare(a.date);
       });
@@ -68,6 +85,25 @@ export function GlassExpenseList({
   useEffect(() => {
     onVisibleChange?.(filteredExpenses);
   }, [filteredExpenses, onVisibleChange]);
+
+  /*
+   * Grouping only makes sense in date order; sorting by amount is an explicit
+   * request for one flat ranked list, so that view stays ungrouped.
+   */
+  const groups = useMemo(() => {
+    if (sortBy !== 'newest') return null;
+    const byDay = new Map<string, Expense[]>();
+    for (const exp of filteredExpenses) {
+      const day = exp.date.slice(0, 10);
+      if (!byDay.has(day)) byDay.set(day, []);
+      byDay.get(day)!.push(exp);
+    }
+    return [...byDay.entries()].map(([day, rows]) => ({
+      day,
+      rows,
+      total: rows.reduce((sum, exp) => sum + exp.amount, 0),
+    }));
+  }, [filteredExpenses, sortBy]);
 
   const handleDelete = async (expense: Expense) => {
     if (!window.confirm(`Delete ${expenseTitle(expense)} (${formatMoney(expense.amount)})?`)) return;
@@ -79,81 +115,191 @@ export function GlassExpenseList({
     }
   };
 
+  const renderRow = (exp: Expense) => {
+    const Icon = categoryIcons[exp.category] || fallbackCategoryIcon;
+    const isDeleting = deletingId === exp.id;
+    const title = expenseTitle(exp);
+    // The title falls back to the category, so repeating it below adds nothing.
+    const meta = title === exp.category ? exp.type : `${exp.category} · ${exp.type}`;
+
+    return (
+      <motion.div
+        key={exp.id}
+        layout
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: isDeleting ? 0.4 : 1, y: 0 }}
+        exit={{ opacity: 0, height: 0 }}
+        transition={{ duration: 0.18 }}
+        className="group flex items-center gap-3 py-2.5 px-2 -mx-2 rounded-2xl hover:bg-black/[0.03] dark:hover:bg-white/[0.05] transition-colors"
+      >
+        <div className="w-9 h-9 shrink-0 rounded-xl bg-black/[0.05] dark:bg-white/[0.08] flex items-center justify-center">
+          <Icon className="w-[18px] h-[18px] text-neutral-600 dark:text-neutral-300" />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-neutral-900 dark:text-white truncate leading-tight">
+            {title}
+          </p>
+          <p className="text-[11px] font-medium text-neutral-400 truncate mt-0.5">
+            <span
+              className={
+                exp.type === 'Need'
+                  ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
+                  : 'text-amber-600 dark:text-amber-400 font-semibold'
+              }
+            >
+              {exp.type}
+            </span>
+            {title !== exp.category && <span> · {exp.category}</span>}
+            {exp.pending && (
+              <span className="inline-flex items-center gap-1 ml-1.5 text-amber-500 font-semibold">
+                <CloudOff className="w-3 h-3" />
+                Not synced
+              </span>
+            )}
+          </p>
+        </div>
+
+        <span className="text-sm font-bold font-display tabular-nums text-neutral-900 dark:text-white shrink-0">
+          {formatMoney(exp.amount)}
+        </span>
+
+        <button
+          onClick={() => handleDelete(exp)}
+          disabled={isDeleting}
+          aria-label={`Delete ${title}`}
+          className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-neutral-300 dark:text-neutral-600 hover:text-red-500 hover:bg-red-500/10 sm:opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </motion.div>
+    );
+  };
+
   return (
     <div className="apple-card w-full">
       {showFilters && (
-        <div className="flex flex-col gap-4 mb-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="relative w-full sm:w-80">
-              <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search expenses…"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 text-xs rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-              />
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              <div className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                <ArrowUpDown className="w-3.5 h-3.5" />
-                <select
-                  value={sortBy}
-                  onChange={(event) => setSortBy(event.target.value as SortOrder)}
-                  aria-label="Sort expenses"
-                  className="bg-transparent border-none focus:outline-none text-xs font-semibold"
-                >
-                  <option value="newest" className="dark:bg-neutral-900">Newest</option>
-                  <option value="highest" className="dark:bg-neutral-900">Highest</option>
-                  <option value="lowest" className="dark:bg-neutral-900">Lowest</option>
-                </select>
-              </div>
-
-              {onExportCSV && (
-                <button
-                  onClick={() => onExportCSV(filteredExpenses)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-2xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-all text-neutral-800 dark:text-neutral-200"
-                  title="Download what is shown as CSV"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>CSV</span>
-                </button>
-              )}
-
-              {onExportPDF && (
-                <button
-                  onClick={() => onExportPDF(filteredExpenses)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 transition-all"
-                  title="Download what is shown as PDF"
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>PDF</span>
-                </button>
-              )}
-            </div>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-5">
+          <div className="relative flex-1 min-w-0">
+            <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search expenses…"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              className="w-full h-10 pl-10 pr-9 text-xs font-medium rounded-2xl bg-black/[0.05] dark:bg-white/[0.08] border-0 text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery('')}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {(['All', ...expenseCategories] as const).map((cat) => (
+          <div className="flex items-center gap-2">
+            {/* Category filter as a picker, not a scrolling strip */}
+            <div className="relative flex-1 sm:flex-none">
               <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-                  selectedCategory === cat
-                    ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm'
-                    : 'bg-black/5 dark:bg-white/5 text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                onClick={() => setCategoryOpen((open) => !open)}
+                aria-expanded={categoryOpen}
+                className={`w-full sm:w-auto h-10 px-3 rounded-2xl inline-flex items-center justify-between gap-2 text-xs font-bold transition-all ${
+                  selectedCategory !== 'All'
+                    ? 'bg-black text-white dark:bg-white dark:text-black'
+                    : 'bg-black/[0.05] dark:bg-white/[0.08] text-neutral-700 dark:text-neutral-300'
                 }`}
               >
-                {cat}
+                <span className="truncate">{selectedCategory}</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 opacity-60 transition-transform ${
+                    categoryOpen ? 'rotate-180' : ''
+                  }`}
+                />
               </button>
-            ))}
+
+              <AnimatePresence>
+                {categoryOpen && (
+                  <>
+                    <div className="fixed inset-0 z-20" onClick={() => setCategoryOpen(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.14 }}
+                      className="absolute right-0 top-full mt-2 z-30 w-[260px] p-1.5 rounded-2xl bg-white dark:bg-neutral-900 border border-black/10 dark:border-white/15 shadow-2xl grid grid-cols-2 gap-1"
+                    >
+                      {(['All', ...expenseCategories] as const).map((cat) => {
+                        const active = selectedCategory === cat;
+                        return (
+                          <button
+                            key={cat}
+                            onClick={() => {
+                              setSelectedCategory(cat);
+                              setCategoryOpen(false);
+                            }}
+                            className={`h-9 px-2.5 rounded-xl inline-flex items-center gap-1.5 text-[11px] font-semibold transition-colors ${
+                              active
+                                ? 'bg-black text-white dark:bg-white dark:text-black'
+                                : 'text-neutral-600 dark:text-neutral-300 hover:bg-black/5 dark:hover:bg-white/10'
+                            }`}
+                          >
+                            <span className="truncate flex-1 text-left">{cat}</span>
+                            {active && <Check className="w-3 h-3 shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="h-10 px-3 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08] inline-flex items-center gap-1.5 text-xs font-bold text-neutral-700 dark:text-neutral-300">
+              <ArrowUpDown className="w-3.5 h-3.5 opacity-60" />
+              <select
+                value={sortBy}
+                onChange={(event) => setSortBy(event.target.value as SortOrder)}
+                aria-label="Sort expenses"
+                className="bg-transparent border-none focus:outline-none text-xs font-bold cursor-pointer"
+              >
+                {(Object.keys(SORT_LABELS) as SortOrder[]).map((key) => (
+                  <option key={key} value={key} className="dark:bg-neutral-900">
+                    {SORT_LABELS[key]}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {onExportCSV && (
+              <button
+                onClick={() => onExportCSV(filteredExpenses)}
+                aria-label="Download shown expenses as CSV"
+                title="Download shown expenses as CSV"
+                className="w-10 h-10 shrink-0 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08] text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white flex items-center justify-center transition-colors"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+            )}
+
+            {onExportPDF && (
+              <button
+                onClick={() => onExportPDF(filteredExpenses)}
+                aria-label="Download shown expenses as PDF"
+                title="Download shown expenses as PDF"
+                className="w-10 h-10 shrink-0 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08] text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white flex items-center justify-center transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       )}
 
       {filteredExpenses.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="flex flex-col items-center justify-center py-14 text-center">
           <div className="w-12 h-12 rounded-2xl bg-black/5 dark:bg-white/10 flex items-center justify-center mb-3 text-neutral-400">
             <ReceiptText className="w-6 h-6" />
           </div>
@@ -173,66 +319,25 @@ export function GlassExpenseList({
             </button>
           )}
         </div>
+      ) : groups ? (
+        <div className="space-y-5">
+          {groups.map((group) => (
+            <section key={group.day}>
+              <div className="flex items-baseline justify-between gap-3 pb-1.5 mb-1 border-b border-black/5 dark:border-white/10">
+                <h4 className="text-[11px] font-bold uppercase tracking-[0.1em] text-neutral-400">
+                  {formatDayLabel(group.day)}
+                </h4>
+                <span className="text-[11px] font-bold tabular-nums text-neutral-400">
+                  {formatMoney(group.total)}
+                </span>
+              </div>
+              <AnimatePresence initial={false}>{group.rows.map(renderRow)}</AnimatePresence>
+            </section>
+          ))}
+        </div>
       ) : (
-        <div className="space-y-2.5">
-          <AnimatePresence initial={false}>
-            {filteredExpenses.map((exp) => {
-              const Icon = categoryIcons[exp.category] || fallbackCategoryIcon;
-              const isDeleting = deletingId === exp.id;
-
-              return (
-                <motion.div
-                  key={exp.id}
-                  layout
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: isDeleting ? 0.4 : 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:border-black/10 dark:hover:border-white/15 transition-all"
-                >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="w-10 h-10 rounded-2xl bg-white dark:bg-neutral-800 flex items-center justify-center shadow-sm shrink-0">
-                      <Icon className="w-5 h-5 text-neutral-800 dark:text-neutral-200" />
-                    </div>
-                    <div className="min-w-0">
-                      <h5 className="text-sm font-bold text-neutral-900 dark:text-white truncate">
-                        {expenseTitle(exp)}
-                      </h5>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
-                        {exp.category} · {formatDayLabel(exp.date)}
-                        {exp.pending && (
-                          <span className="inline-flex items-center gap-1 ml-1.5 text-amber-500 font-semibold">
-                            <CloudOff className="w-3 h-3" />
-                            Not synced
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="flex flex-col items-end">
-                      <span className={exp.type === 'Need' ? 'badge-need' : 'badge-want'}>
-                        {exp.type}
-                      </span>
-                      <span className="text-sm font-extrabold font-display tabular-nums text-neutral-900 dark:text-white mt-1">
-                        {formatMoney(exp.amount)}
-                      </span>
-                    </div>
-
-                    <button
-                      onClick={() => handleDelete(exp)}
-                      disabled={isDeleting}
-                      className="p-2 rounded-xl text-red-500 hover:bg-red-500/10 transition-colors"
-                      aria-label={`Delete ${expenseTitle(exp)}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+        <div>
+          <AnimatePresence initial={false}>{filteredExpenses.map(renderRow)}</AnimatePresence>
         </div>
       )}
     </div>
