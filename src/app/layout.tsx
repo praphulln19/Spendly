@@ -13,7 +13,9 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   icons: {
     icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
-    apple: [{ url: '/icon.svg' }],
+    // iOS ignores SVG here and wants a raster, full-bleed square; it applies its
+    // own corner mask.
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
   appleWebApp: {
     capable: true,
