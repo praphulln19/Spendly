@@ -33,7 +33,7 @@ interface QuickAddSheetProps {
   todayBudget: number;
 }
 
-const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0'] as const;
+const DIGITS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'] as const;
 
 const EDGE_FADE = {
   maskImage: 'linear-gradient(to right, black calc(100% - 28px), transparent)',
@@ -191,18 +191,43 @@ export function QuickAddSheet({
               </div>
             </div>
 
-            {/* Numpad — narrower than the sheet so keys are not squat */}
+            {/* Numpad — narrower than the sheet so keys are not squat. The last
+                row flanks 0 with the two actions, so the digits keep an even
+                rhythm and neither action needs a row of its own. */}
             <div className="grid grid-cols-3 gap-2 max-w-[300px] mx-auto my-4">
-              {KEYS.map((key) => (
+              {DIGITS.map((digit) => (
                 <button
-                  key={key}
+                  key={digit}
                   type="button"
-                  onClick={() => press(key)}
+                  onClick={() => press(digit)}
                   className="h-[52px] text-[19px] font-bold font-display tabular-nums rounded-2xl bg-black/[0.04] dark:bg-white/[0.07] text-neutral-900 dark:text-white active:bg-black/10 dark:active:bg-white/15 active:scale-95 transition-all"
                 >
-                  {key}
+                  {digit}
                 </button>
               ))}
+
+              <button
+                type="button"
+                onClick={() => setNoteOpen((open) => !open)}
+                aria-label={noteOpen ? 'Hide note' : 'Add a note'}
+                aria-pressed={noteOpen}
+                className={`h-[52px] rounded-2xl flex items-center justify-center active:scale-95 transition-all ${
+                  noteOpen || note
+                    ? 'bg-blue-500/10 text-blue-500'
+                    : 'text-neutral-400 active:bg-black/10 dark:active:bg-white/15'
+                }`}
+              >
+                <MessageSquarePlus className="w-[21px] h-[21px]" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => press('0')}
+                className="h-[52px] text-[19px] font-bold font-display tabular-nums rounded-2xl bg-black/[0.04] dark:bg-white/[0.07] text-neutral-900 dark:text-white active:bg-black/10 dark:active:bg-white/15 active:scale-95 transition-all"
+              >
+                0
+              </button>
+
               <button
                 type="button"
                 onClick={backspace}
@@ -213,10 +238,11 @@ export function QuickAddSheet({
               </button>
             </div>
 
-            {/* One meta row, fixed proportions: type flexes, day sizes to content,
-                note is a square icon. */}
-            <div className="flex items-stretch gap-2 h-10">
-              <div className="grid grid-cols-2 flex-1 p-0.5 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08]">
+            {/* Two controls, two equal halves. With the note moved onto the pad
+                this row splits evenly instead of fitting three mismatched
+                widths against each other. */}
+            <div className="flex items-stretch gap-2 h-11">
+              <div className="grid grid-cols-2 flex-1 basis-0 p-0.5 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08]">
                 {(['Need', 'Want'] as const).map((option) => (
                   <button
                     key={option}
@@ -238,7 +264,7 @@ export function QuickAddSheet({
                 ))}
               </div>
 
-              <label className="relative inline-flex items-center gap-1.5 px-3 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08] text-xs font-bold text-neutral-600 dark:text-neutral-300 cursor-pointer whitespace-nowrap">
+              <label className="relative flex-1 basis-0 inline-flex items-center justify-center gap-1.5 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08] text-xs font-bold text-neutral-600 dark:text-neutral-300 cursor-pointer whitespace-nowrap active:scale-95 transition-transform">
                 <Calendar className="w-3.5 h-3.5 text-neutral-400" />
                 <span>{formatDayLabel(date)}</span>
                 <input
@@ -251,20 +277,6 @@ export function QuickAddSheet({
                   aria-label="Expense date"
                 />
               </label>
-
-              <button
-                type="button"
-                onClick={() => setNoteOpen((open) => !open)}
-                aria-label={noteOpen ? 'Hide note' : 'Add a note'}
-                aria-pressed={noteOpen}
-                className={`w-10 shrink-0 rounded-2xl flex items-center justify-center transition-all ${
-                  noteOpen || note
-                    ? 'bg-blue-500/10 text-blue-500'
-                    : 'bg-black/[0.05] dark:bg-white/[0.08] text-neutral-400'
-                }`}
-              >
-                <MessageSquarePlus className="w-4 h-4" />
-              </button>
             </div>
 
             {noteOpen && (
