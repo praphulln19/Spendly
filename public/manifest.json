@@ -1,7 +1,7 @@
 {
-  "name": "Spendly - Student Expense Tracker",
+  "name": "Spendly - Daily Spending Allowance",
   "short_name": "Spendly",
-  "description": "Designed with Apple-grade clarity. Track student spending, calculate daily budget limits, and gain instant financial confidence.",
+  "description": "Set what you have and how long it has to last. Spendly works out what you can spend today, and recalculates every morning.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
@@ -13,6 +13,22 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add expense",
+      "short_name": "Add",
+      "description": "Log a spend without opening the app first",
+      "url": "/?add=1",
+      "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Insights",
+      "short_name": "Insights",
+      "description": "Review spending history and pace",
+      "url": "/insights",
+      "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
     }
   ]
 }
