@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, CheckCircle2, Info, Sparkles, TrendingDown } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Info, Sparkles, TrendingDown, X } from 'lucide-react';
 import type { BudgetMessage, BudgetTone } from '../utils/allowance';
 
 /*
@@ -52,19 +52,35 @@ const TONES: Record<
   },
 };
 
-export function BudgetAlert({ message }: { message: BudgetMessage }) {
+export function BudgetAlert({
+  message,
+  onDismiss,
+}: {
+  message: BudgetMessage;
+  onDismiss?: () => void;
+}) {
   const tone = TONES[message.tone];
   const Icon = tone.icon;
 
   return (
     <div className={`flex items-start gap-3 p-3.5 rounded-2xl border ${tone.wrap}`} role="status">
       <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${tone.iconTone}`} />
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className={`text-sm font-bold leading-snug ${tone.title}`}>{message.title}</p>
         <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mt-0.5 leading-relaxed">
           {message.detail}
         </p>
       </div>
+      {onDismiss && (
+        <button
+          onClick={onDismiss}
+          aria-label="Dismiss until tomorrow"
+          title="Dismiss until tomorrow"
+          className="w-6 h-6 -mr-1 -mt-0.5 shrink-0 rounded-lg flex items-center justify-center text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      )}
     </div>
   );
 }

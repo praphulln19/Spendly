@@ -287,6 +287,39 @@ export interface BudgetMessage {
   detail: string;
 }
 
+/** A record of the user waving an alert away, kept per user. */
+export interface AlertDismissal {
+  /** The day it was dismissed on; a new day speaks again */
+  date: string;
+  tone: BudgetTone;
+}
+
+const TONE_SEVERITY: Record<BudgetTone, number> = {
+  neutral: 0,
+  good: 0,
+  great: 0,
+  caution: 1,
+  warning: 2,
+  critical: 3,
+};
+
+/**
+ * Whether a dismissal still silences the current message.
+ *
+ * Two things break the silence: a new day, and an escalation. Without the
+ * second, waving away "on track" in the morning would also swallow "you are
+ * past this budget" in the afternoon, which is the one message that must always
+ * get through.
+ */
+export function isAlertSilenced(
+  dismissal: AlertDismissal | null,
+  tone: BudgetTone,
+  today: string
+): boolean {
+  if (!dismissal || dismissal.date !== today) return false;
+  return TONE_SEVERITY[tone] <= TONE_SEVERITY[dismissal.tone];
+}
+
 /** What today is worth tomorrow, if today's spending stops here. */
 export function tomorrowBudget(allowance: Allowance): number {
   if (allowance.daysRemaining <= 1) return 0;

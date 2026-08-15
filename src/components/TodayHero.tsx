@@ -3,7 +3,14 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Wallet } from 'lucide-react';
 import type { Allowance } from '../utils/allowance';
-import { buildBudgetMessage, buildDayStrip, formatPeriodLabel } from '../utils/allowance';
+import {
+  buildBudgetMessage,
+  buildDayStrip,
+  formatPeriodLabel,
+  isAlertSilenced,
+  type AlertDismissal,
+  type BudgetTone,
+} from '../utils/allowance';
 import type { Expense } from '../types/expense';
 import { formatMoney } from '../utils/format';
 import { DayStrip } from './DayStrip';
@@ -13,6 +20,9 @@ interface TodayHeroProps {
   allowance: Allowance | null;
   expenses: Expense[];
   onSetBudget: () => void;
+  today: string;
+  alertDismissal: AlertDismissal | null;
+  onDismissAlert: (tone: BudgetTone) => void;
 }
 
 /**
@@ -23,7 +33,14 @@ interface TodayHeroProps {
  * colour to editorialise. State is carried by the strip and the status line
  * underneath instead.
  */
-export function TodayHero({ allowance, expenses, onSetBudget }: TodayHeroProps) {
+export function TodayHero({
+  allowance,
+  expenses,
+  onSetBudget,
+  today,
+  alertDismissal,
+  onDismissAlert,
+}: TodayHeroProps) {
   const reduceMotion = useReducedMotion();
 
   if (!allowance) {
@@ -129,9 +146,11 @@ export function TodayHero({ allowance, expenses, onSetBudget }: TodayHeroProps) 
         <DayStrip cells={cells} />
       </div>
 
-      <div className="mt-5">
-        <BudgetAlert message={message} />
-      </div>
+      {!isAlertSilenced(alertDismissal, message.tone, today) && (
+        <div className="mt-5">
+          <BudgetAlert message={message} onDismiss={() => onDismissAlert(message.tone)} />
+        </div>
+      )}
 
       <div className="mt-3 pt-3 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-x-5 gap-y-1 text-xs">
         <span className="text-neutral-400 font-medium tabular-nums">

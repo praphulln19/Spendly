@@ -18,8 +18,18 @@ export default function TodayPage() {
 }
 
 function TodayView() {
-  const { allowance, expenses, loading, error, today, refresh, remove, currentPeriod } =
-    useExpenseStore();
+  const {
+    allowance,
+    expenses,
+    loading,
+    error,
+    today,
+    refresh,
+    remove,
+    currentPeriod,
+    alertDismissal,
+    dismissAlert,
+  } = useExpenseStore();
   const { openAddExpense, openBudget } = useAppChrome();
 
   const todaysExpenses = expensesOnDay(expenses, today);
@@ -49,7 +59,14 @@ function TodayView() {
         </div>
       )}
 
-      <TodayHero allowance={allowance} expenses={expenses} onSetBudget={openBudget} />
+      <TodayHero
+        allowance={allowance}
+        expenses={expenses}
+        onSetBudget={openBudget}
+        today={today}
+        alertDismissal={alertDismissal}
+        onDismissAlert={dismissAlert}
+      />
 
       {/* Today's entries */}
       <section>

@@ -30,6 +30,8 @@ import {
   findLastEndedPeriod,
   todayISO,
   type Allowance,
+  type AlertDismissal,
+  type BudgetTone,
 } from '../utils/allowance';
 
 type ExpenseStore = {
@@ -48,6 +50,10 @@ type ExpenseStore = {
   allowance: Allowance | null;
 
   lastCategory: ExpenseCategory;
+
+  /** The last budget alert waved away, so it can stay quiet for the rest of the day */
+  alertDismissal: AlertDismissal | null;
+  dismissAlert: (tone: BudgetTone) => void;
 
   refresh: () => Promise<void>;
   add: (expense: NewExpense) => Promise<void>;
@@ -86,6 +92,7 @@ function useExpenseData(): ExpenseStore {
   const [pendingCount, setPendingCount] = useState(0);
   const [isOnline, setIsOnline] = useState(true);
   const [lastCategory, setLastCategory] = useState<ExpenseCategory>('Food');
+  const [alertDismissal, setAlertDismissal] = useState<AlertDismissal | null>(null);
   const [today, setToday] = useState<string>(() => todayISO());
 
   /* ---------------------------------------------------------------------- */
@@ -220,6 +227,7 @@ function useExpenseData(): ExpenseStore {
       return;
     }
     setLastCategory(readScoped<ExpenseCategory>(userId, 'last-category', 'Food'));
+    setAlertDismissal(readScoped<AlertDismissal | null>(userId, 'alert-dismissal', null));
     void refresh();
   }, [sessionReady, userId, refresh]);
 
@@ -326,6 +334,15 @@ function useExpenseData(): ExpenseStore {
     return subject ? computeAllowance(subject, expenses) : null;
   }, [currentPeriod, lastEndedPeriod, expenses, today]);
 
+  const dismissAlert = useCallback(
+    (tone: BudgetTone) => {
+      const dismissal: AlertDismissal = { date: todayISO(), tone };
+      setAlertDismissal(dismissal);
+      writeScoped(userId, 'alert-dismissal', dismissal);
+    },
+    [userId]
+  );
+
   const stash = useCallback(
     async (amount: number) => {
       if (!currentPeriod) return;
@@ -420,6 +437,8 @@ function useExpenseData(): ExpenseStore {
     lastEndedPeriod,
     allowance,
     lastCategory,
+    alertDismissal,
+    dismissAlert,
     refresh,
     add,
     remove,
