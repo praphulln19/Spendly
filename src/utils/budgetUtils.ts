@@ -66,40 +66,8 @@ export function getMonthTotalSpent(expenses: Expense[], monthKey: string): numbe
   return getExpensesForMonth(expenses, monthKey).reduce((sum, exp) => sum + exp.amount, 0);
 }
 
-/**
- * Returns 0 for carryover (rollover disabled)
+/*
+ * Rollover and daily-allowance logic lives in `utils/allowance.ts` and works off
+ * budget periods rather than calendar months. What remains here is the month
+ * bucketing the Insights screen uses for historical review.
  */
-export function getCarryoverAmount(expenses: Expense[], currentMonthKey: string, baseBudget: number): number {
-  return 0;
-}
-
-/**
- * Get effective budget for a target month (returns baseBudget directly)
- */
-export function getEffectiveBudget(expenses: Expense[], currentMonthKey: string, baseBudget: number): number {
-  return baseBudget || 0;
-}
-
-/**
- * Get remaining days in the specified month.
- * If monthKey is current month, calculates remaining days from today.
- * If monthKey is in past, returns 0.
- * If monthKey is in future, returns total days in that month.
- */
-export function getDaysRemainingInMonth(monthKey: string): { daysRemaining: number; totalDays: number } {
-  const now = new Date();
-  const currentMonthKey = getMonthKey(now);
-  
-  const [year, month] = monthKey.split('-').map(Number);
-  const totalDays = new Date(year, month, 0).getDate();
-
-  if (monthKey === currentMonthKey) {
-    const today = now.getDate();
-    const daysRemaining = Math.max(1, totalDays - today + 1);
-    return { daysRemaining, totalDays };
-  } else if (monthKey < currentMonthKey) {
-    return { daysRemaining: 0, totalDays };
-  } else {
-    return { daysRemaining: totalDays, totalDays };
-  }
-}

@@ -2,12 +2,14 @@ import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import './globals.css';
 import { ThemeProvider } from '../context/ThemeProvider';
+import { SessionProvider } from '../context/SessionProvider';
 import { ExpenseProvider } from '../hooks/useExpenses';
 import { PWAPrompt } from '../components/PWAPrompt';
 
 export const metadata: Metadata = {
-  title: 'Spendly | Personal Expense Tracker',
-  description: 'A modern mobile and web expense-tracking app built with Next.js 15, React 19, and Supabase.',
+  title: 'Spendly | What can I spend today?',
+  description:
+    'Set what you have and how long it has to last. Spendly works out what you can spend today, and recalculates every morning.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -24,11 +26,7 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -36,10 +34,12 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>
-          <ExpenseProvider>
-            {children}
-            <PWAPrompt />
-          </ExpenseProvider>
+          <SessionProvider>
+            <ExpenseProvider>
+              {children}
+              <PWAPrompt />
+            </ExpenseProvider>
+          </SessionProvider>
         </ThemeProvider>
         <Script
           src="https://cloud.umami.is/script.js"

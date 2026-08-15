@@ -2,35 +2,9 @@
 
 import { motion } from 'framer-motion';
 import type { Expense, ExpenseCategory } from '../types/expense';
-import { formatMoney } from './SummaryCards';
-import {
-  Utensils,
-  Bus,
-  GraduationCap,
-  Home,
-  Smartphone,
-  ShoppingBag,
-  Film,
-  User,
-  Repeat,
-  CircleEllipsis,
-  type LucideIcon,
-  Layers,
-} from 'lucide-react';
-
-const categoryIcons: Record<ExpenseCategory, LucideIcon> = {
-  Food: Utensils,
-  Transport: Bus,
-  Education: GraduationCap,
-  'Rent/Hostel': Home,
-  'Mobile/Internet': Smartphone,
-  Shopping: ShoppingBag,
-  Entertainment: Film,
-  Personal: User,
-  Subscriptions: Repeat,
-  Other: CircleEllipsis,
-};
-
+import { formatMoney } from '../utils/format';
+import { categoryIcons, fallbackCategoryIcon } from './categoryIcons';
+import { Layers } from 'lucide-react';
 import { getMonthKey, getExpensesForMonth } from '../utils/budgetUtils';
 
 interface GlassCategoryBreakdownProps {
@@ -82,7 +56,7 @@ export function GlassCategoryBreakdown({
       ) : (
         <div className="space-y-4">
           {categoryTotals.slice(0, 5).map(({ category, amount }, idx) => {
-            const Icon = categoryIcons[category] || CircleEllipsis;
+            const Icon = categoryIcons[category] || fallbackCategoryIcon;
             const percentage = Math.max(6, Math.round((amount / maxAmount) * 100));
 
             return (
