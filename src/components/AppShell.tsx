@@ -6,7 +6,7 @@ import { useSession } from '../context/SessionProvider';
 import { useExpenseStore } from '../hooks/useExpenses';
 import { nextPeriodAfter } from '../utils/allowance';
 import { AppleNavbar } from './AppleNavbar';
-import { AppleAuthScreen } from './AppleAuthScreen';
+import { LandingPage } from './LandingPage';
 import { MobileBottomNav } from './MobileBottomNav';
 import { QuickAddSheet } from './QuickAddSheet';
 import { PeriodSetupModal } from './PeriodSetupModal';
@@ -71,7 +71,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!session) return <AppleAuthScreen />;
+  // Signed out, the app is the landing page.
+  if (!session) return <LandingPage />;
 
   // When the current budget has lapsed, prefill the next one with the same shape.
   const suggestedNext =

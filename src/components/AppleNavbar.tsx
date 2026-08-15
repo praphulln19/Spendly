@@ -248,48 +248,16 @@ export function AppleNavbar({ session, allowance, onOpenAddExpense }: AppleNavba
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
-                {NAV_ITEMS.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`flex flex-col items-center justify-center gap-1 p-3 rounded-2xl text-[11px] font-bold transition-all ${
-                        pathname === item.href
-                          ? 'bg-black text-white dark:bg-white dark:text-black shadow-md'
-                          : 'bg-black/5 dark:bg-white/5 text-neutral-600 dark:text-neutral-400'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span>{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-
-              <div className="flex flex-col gap-2 pt-1 border-t border-black/5 dark:border-white/10">
-                {onOpenAddExpense && (
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      onOpenAddExpense();
-                    }}
-                    className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-black text-white dark:bg-white dark:text-black font-bold text-xs shadow-md transition-all"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Add expense</span>
-                  </button>
-                )}
-
-                <button
-                  onClick={handleSignOut}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl text-xs font-bold text-red-500 bg-red-500/10 hover:bg-red-500/20 transition-colors"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Sign out</span>
-                </button>
-              </div>
+              {/* Navigation and Add live in the bottom dock on mobile, so the
+                  drawer carries only what the dock cannot: who is signed in,
+                  and the way out. */}
+              <button
+                onClick={handleSignOut}
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl text-xs font-bold text-red-500 bg-red-500/10 hover:bg-red-500/20 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign out</span>
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
