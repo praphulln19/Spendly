@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Delete, X, MessageSquarePlus, Calendar, ChevronDown, Check } from 'lucide-react';
+import { Delete, X, MessageSquarePlus, Calendar, ChevronDown, Check, Tag } from 'lucide-react';
 import {
   categoryDefaultType,
   expenseCategories,
@@ -28,7 +28,6 @@ interface QuickAddSheetProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (expense: NewExpense) => Promise<void>;
-  defaultCategory: ExpenseCategory;
   /** Prices the entry in days of allowance while it is typed */
   todayBudget: number;
 }
@@ -48,16 +47,12 @@ const PAD_KEY =
 const PAD_ACTION =
   'h-[52px] rounded-2xl flex items-center justify-center active:scale-95 transition-all';
 
-export function QuickAddSheet({
-  isOpen,
-  onClose,
-  onAdd,
-  defaultCategory,
-  todayBudget,
-}: QuickAddSheetProps) {
+export function QuickAddSheet({ isOpen, onClose, onAdd, todayBudget }: QuickAddSheetProps) {
   const [digits, setDigits] = useState('');
-  const [category, setCategory] = useState<ExpenseCategory>(defaultCategory);
-  const [type, setType] = useState<ExpenseType>(categoryDefaultType[defaultCategory]);
+  // Unset until chosen, so the control is a prompt rather than a value the user
+  // never actually picked.
+  const [category, setCategory] = useState<ExpenseCategory | null>(null);
+  const [type, setType] = useState<ExpenseType>('Need');
   const [typeTouched, setTypeTouched] = useState(false);
   const [date, setDate] = useState(() => todayISO());
   const [note, setNote] = useState('');
@@ -67,14 +62,15 @@ export function QuickAddSheet({
   const [error, setError] = useState<string | null>(null);
 
   const amount = Number(digits || '0');
-  const valid = amount > 0;
-  const CategoryIcon = categoryIcons[category];
+  const hasAmount = amount > 0;
+  const valid = hasAmount && category !== null;
+  const CategoryIcon = category ? categoryIcons[category] : Tag;
 
   useEffect(() => {
     if (!isOpen) return;
     setDigits('');
-    setCategory(defaultCategory);
-    setType(categoryDefaultType[defaultCategory]);
+    setCategory(null);
+    setType('Need');
     setTypeTouched(false);
     setDate(todayISO());
     setNote('');
@@ -82,7 +78,7 @@ export function QuickAddSheet({
     setPickingCategory(false);
     setError(null);
     setSaving(false);
-  }, [isOpen, defaultCategory]);
+  }, [isOpen]);
 
   const press = useCallback((key: string) => {
     setError(null);
@@ -102,8 +98,13 @@ export function QuickAddSheet({
   };
 
   const submit = useCallback(async () => {
-    if (!valid) {
+    if (!hasAmount) {
       setError('Enter an amount first.');
+      return;
+    }
+    if (!category) {
+      setError('Pick a category first.');
+      setPickingCategory(true);
       return;
     }
     setSaving(true);
@@ -115,7 +116,7 @@ export function QuickAddSheet({
       setError(cause instanceof Error ? cause.message : 'Could not save that expense.');
       setSaving(false);
     }
-  }, [valid, date, category, note, amount, type, onAdd, onClose]);
+  }, [hasAmount, date, category, note, amount, type, onAdd, onClose]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -174,14 +175,16 @@ export function QuickAddSheet({
             <div className="text-center pt-2 pb-4">
               <div
                 className={`font-display font-black tabular-nums leading-none tracking-[-0.045em] text-[3.25rem] transition-colors ${
-                  valid ? 'text-neutral-900 dark:text-white' : 'text-neutral-200 dark:text-neutral-700'
+                  hasAmount
+                    ? 'text-neutral-900 dark:text-white'
+                    : 'text-neutral-200 dark:text-neutral-700'
                 }`}
               >
-                <span className="text-[0.5em] font-bold mr-1 tracking-normal">₹</span>
+                <span className="mr-1">₹</span>
                 {amount.toLocaleString('en-IN')}
               </div>
               <p className="mt-2 h-4 text-[11px] font-semibold text-neutral-400">
-                {valid && todayBudget > 0
+                {hasAmount && todayBudget > 0
                   ? `${formatDaysOfAllowance(amount, todayBudget)} of today's allowance`
                   : ''}
               </p>
@@ -199,8 +202,12 @@ export function QuickAddSheet({
               }`}
             >
               <CategoryIcon className="w-4 h-4 shrink-0 opacity-70" />
-              <span className="flex-1 text-left truncate">
-                {pickingCategory ? 'Choose a category' : category}
+              <span
+                className={`flex-1 text-left truncate ${
+                  !category && !pickingCategory ? 'text-neutral-500 dark:text-neutral-400' : ''
+                }`}
+              >
+                {category ?? 'Select category'}
               </span>
               <ChevronDown
                 className={`w-4 h-4 shrink-0 opacity-50 transition-transform duration-200 ${
@@ -353,7 +360,13 @@ export function QuickAddSheet({
                   : 'bg-black/[0.05] dark:bg-white/[0.08] text-neutral-400 cursor-not-allowed'
               }`}
             >
-              {saving ? 'Saving…' : valid ? `Add ${formatMoney(amount)}` : 'Enter an amount'}
+              {saving
+                ? 'Saving…'
+                : valid
+                ? `Add ${formatMoney(amount)}`
+                : hasAmount
+                ? 'Select a category'
+                : 'Enter an amount'}
             </button>
           </motion.div>
         </div>

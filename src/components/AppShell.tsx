@@ -35,7 +35,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     allowance,
     currentPeriod,
     lastEndedPeriod,
-    lastCategory,
     isOnline,
     pendingCount,
     add,
@@ -94,7 +93,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           isOpen={addOpen}
           onClose={() => setAddOpen(false)}
           onAdd={add}
-          defaultCategory={lastCategory}
           todayBudget={allowance?.todayBudget ?? 0}
         />
 

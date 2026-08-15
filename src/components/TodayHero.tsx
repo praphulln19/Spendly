@@ -120,7 +120,7 @@ export function TodayHero({ allowance, expenses, onSetBudget }: TodayHeroProps) 
             isOver ? 'text-red-500' : 'text-neutral-900 dark:text-white'
           }`}
         >
-          <span className="text-[0.5em] font-bold mr-1 tracking-normal">₹</span>
+          <span className="mr-1">₹</span>
           {Math.round(Math.abs(todayLeft)).toLocaleString('en-IN')}
         </div>
 
