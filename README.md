@@ -5,18 +5,22 @@
 <h1 align="center">Spendly</h1>
 
 <p align="center">
-  A modern, elegant expense tracking web application built with Apple-grade glassmorphism clarity. Track spending, calculate daily budget limits, and gain instant financial confidence.
+  What can I spend today? Set what you have and how long it has to last, and Spendly works out a daily number — recalculated every morning, offline-friendly, and built with Apple-grade glassmorphism clarity.
 </p>
 
 ---
 
 ## What it does
 
-- **Budget Goal Ring** - Apple Watch-style ring visualizer tracking monthly budget limits and live daily allowance calculations.
-- **Spending Trends Analytics** - Interactive SVG trend graph with axis arrows, grid lines, and hover data tooltips.
-- **Category Breakdown** - Frosted glass cards with glowing category distribution progress bars.
-- **Transaction Records & Export** - Searchable, filterable transaction history with CSV and formatted PDF report export options.
-- **PWA & Mobile Support** - Progressive Web App with offline service worker support, custom iOS/Android installation guidance, and interactive Dock navigation.
+- **Daily Allowance Engine** - Set a budget and a period; Spendly divides what's left by the days remaining and rolls yesterday's under/overspend into today's number automatically.
+- **Today Hero & Day Strip** - A single daily figure up front, backed by a per-day strip that shows spending *pace* (relative to that day's own allowance) rather than raw amounts, so a low number today is never a mystery.
+- **Budget Alerts** - Tone-scaled warnings (good → caution → warning → critical) that can be dismissed for the day, with escalation breaking through the silence if things get worse.
+- **Need vs. Want Split** - Spend priced in days of allowance instead of currency, split by need/want so the habit that's actually costing you is visible.
+- **Insights & Trends** - Month-by-month navigation with a budget ring, an interactive SVG spending trend graph, and a glowing category breakdown.
+- **Transaction Records & Export** - Searchable, filterable expense history with a shared filter picker, plus CSV and formatted PDF report export.
+- **Offline-First** - Expenses log instantly to local state and queue for sync when the connection drops — built for logging spend standing at a counter on bad reception, not as an edge case.
+- **PWA & Mobile Support** - Installable app with offline service worker, custom iOS/Android install guidance, an installed-app quick-add shortcut, and a mobile dock nav.
+- **Signed-Out Landing Page** - A marketing landing page with a live product preview for visitors, separate from the authenticated app shell.
 
 ---
 
@@ -25,7 +29,7 @@
 | Category | Technology |
 |---|---|
 | Frontend | [![Next.js](https://img.shields.io/badge/Next.js_15-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org) [![React](https://img.shields.io/badge/React_19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev) [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org) |
-| Styling & UI | [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com) [![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)](https://www.framer.com/motion) [![Lucide Icons](https://img.shields.io/badge/Lucide_Icons-F55036?style=for-the-badge&logoColor=white)](https://lucide.dev) |
+| Styling & UI | [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com) [![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)](https://www.framer.com/motion) [![GSAP](https://img.shields.io/badge/GSAP-88CE02?style=for-the-badge&logo=greensock&logoColor=black)](https://gsap.com) [![Lucide Icons](https://img.shields.io/badge/Lucide_Icons-F55036?style=for-the-badge&logoColor=white)](https://lucide.dev) |
 | Auth & DB | [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com) [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org) |
 | Analytics & PWA | [![Umami](https://img.shields.io/badge/Umami-2B4C7E?style=for-the-badge&logo=umami&logoColor=white)](https://umami.is) [![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps) |
 | Data Export | [![jsPDF](https://img.shields.io/badge/jsPDF-EC3B4D?style=for-the-badge&logoColor=white)](https://github.com/parallax/jsPDF) |
@@ -64,39 +68,60 @@ Spendly/
 ├── src/
 │   ├── app/
 │   │   ├── auth/
-│   │   │   └── callback/        # OAuth callback router
+│   │   │   └── callback/        # OAuth callback route
 │   │   ├── expenses/            # All transactions page
+│   │   ├── insights/            # Trends, month navigation & category breakdown
 │   │   ├── globals.css          # Global styles & design tokens
 │   │   ├── layout.tsx           # Root layout shell & providers
-│   │   └── page.tsx             # Main dashboard overview
+│   │   └── page.tsx             # Today view (daily allowance dashboard)
 │   ├── components/
-│   │   ├── AnalyticsBarChart.tsx # SVG spending trend line graph
-│   │   ├── AppleAuthScreen.tsx  # OAuth authentication screen
-│   │   ├── AppleNavbar.tsx      # Top bar navigation & drawer
-│   │   ├── BudgetRing.tsx       # Apple Watch style budget ring
-│   │   ├── Dock.css / Dock.tsx  # React Bits interactive dock bar
-│   │   ├── GlassExpenseList.tsx # Filterable transaction table
-│   │   ├── MobileBottomNav.tsx  # Mobile floating dock bar
-│   │   ├── PWAPrompt.tsx        # Mobile PWA install guidance
-│   │   ├── SetBudgetModal.tsx   # Budget limit modal
-│   │   └── TextType.tsx         # React Bits animated quote text
+│   │   ├── AnalyticsBarChart.tsx     # SVG spending trend line graph
+│   │   ├── AppleNavbar.tsx           # Top bar navigation & drawer
+│   │   ├── AppShell.tsx              # Session gating, chrome & global sheets
+│   │   ├── BudgetAlert.tsx           # Tone-scaled budget status banner
+│   │   ├── BudgetRing.tsx            # Apple Watch style budget ring
+│   │   ├── categoryIcons.ts          # Category → icon mapping
+│   │   ├── DayStrip.tsx              # Per-day spend-pace strip
+│   │   ├── GlassCategoryBreakdown.tsx # Frosted glass category distribution
+│   │   ├── GlassExpenseList.tsx      # Filterable transaction table & export
+│   │   ├── LandingPage.tsx           # Signed-out marketing page & preview
+│   │   ├── MobileBottomNav.tsx       # Mobile floating dock bar
+│   │   ├── NeedWantSplit.tsx         # Need/want spend split in days
+│   │   ├── OfflineBanner.tsx         # Connectivity & pending-sync indicator
+│   │   ├── PeriodSetupModal.tsx      # Budget period setup/edit modal
+│   │   ├── PickerMenu.tsx            # Shared filter/picker menu
+│   │   ├── PWAPrompt.tsx             # Mobile PWA install guidance
+│   │   ├── QuickAddSheet.tsx         # Quick expense entry sheet
+│   │   ├── SpendlyMark.tsx           # Wordmark/logo component
+│   │   └── TodayHero.tsx             # Today's allowance hero card
 │   ├── context/
+│   │   ├── SessionProvider.tsx  # Supabase auth session context
 │   │   └── ThemeProvider.tsx    # Light/Dark mode context
-│   ├── data/
-│   │   └── quotes.ts            # Curated financial quotes
 │   ├── hooks/
-│   │   └── useExpenses.tsx      # Expense data store & PDF/CSV export
+│   │   └── useExpenses.tsx      # Expense store, allowance state & CSV/PDF export
 │   ├── lib/
-│   │   └── supabase.ts          # Supabase client setup
-│   └── types/
-│       └── expense.ts           # TypeScript interfaces & categories
+│   │   ├── offlineQueue.ts      # Queues writes made while offline
+│   │   ├── supabase.ts          # Supabase client setup
+│   │   └── userStorage.ts       # User-scoped localStorage helpers
+│   ├── services/
+│   │   └── expenseService.ts    # Supabase CRUD for expenses
+│   ├── types/
+│   │   ├── budget.ts            # Budget period interfaces
+│   │   └── expense.ts           # Expense interfaces & categories
+│   └── utils/
+│       ├── allowance.ts         # Daily allowance & date math
+│       ├── budgetUtils.ts       # Month navigation & aggregation helpers
+│       └── format.ts            # Currency/date formatting
+├── supabase/
+│   └── migrations/              # Postgres schema & RLS policies
 ├── public/                      # Manifest, service worker & icons
 │   ├── icon.svg
+│   ├── apple-touch-icon.png
 │   ├── manifest.json
 │   └── sw.js
 ├── .env.example                 # Environment variables template
-├── next.config.ts
-├── tailwind.config.ts
+├── next.config.js
+├── tailwind.config.js
 └── package.json
 ```
 
@@ -107,6 +132,7 @@ Spendly/
 - `npm run dev` - Start Next.js development server
 - `npm run build` - Build production application bundle
 - `npm start` - Run production server after building
+- `npm run lint` - Lint the codebase
 - `npm run typecheck` - Validate TypeScript types across the app
 
 ---
