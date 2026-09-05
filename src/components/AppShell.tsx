@@ -62,12 +62,36 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Once the session settles the boot markup is gone, so the flag the boot
+  // script set has nothing left to hide.
+  useEffect(() => {
+    if (ready) document.documentElement.classList.remove('session-restoring');
+  }, [ready]);
+
+  /*
+   * Before the session is known, the server renders the landing page for
+   * everybody. It has to: this is the only HTML a crawler or a link preview ever
+   * sees, and returning a spinner here is what left the site with no indexable
+   * content at all.
+   *
+   * A returning signed-in visitor still never sees it. The boot script marks
+   * <html> before the first paint, and the swap below is pure CSS -- the React
+   * tree is identical on both sides, so hydration stays clean.
+   */
   if (!ready) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#f5f5f7] dark:bg-black text-neutral-400">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-        <p className="text-xs font-bold font-display tracking-tight">Opening Spendly…</p>
-      </div>
+      <>
+        <div
+          data-session-splash
+          className="min-h-screen flex-col items-center justify-center gap-3 bg-[#f5f5f7] dark:bg-black text-neutral-400"
+        >
+          <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+          <p className="text-xs font-bold font-display tracking-tight">Opening Spendly…</p>
+        </div>
+        <div data-landing-boot>
+          <LandingPage />
+        </div>
+      </>
     );
   }
 

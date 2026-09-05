@@ -107,3 +107,24 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(140, 140, 140, 0.5);
 }
+
+/*
+ * Pre-paint session swap.
+ *
+ * The server sends the landing page to every visitor so there is real HTML for
+ * crawlers and link previews to read. The boot script in the root layout sets
+ * `session-restoring` on <html> before the first paint when a stored Supabase
+ * token exists, and these two rules swap the landing markup for the boot
+ * spinner without touching the React tree.
+ */
+[data-session-splash] {
+  display: none;
+}
+
+.session-restoring [data-session-splash] {
+  display: flex;
+}
+
+.session-restoring [data-landing-boot] {
+  display: none;
+}
