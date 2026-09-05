@@ -1,12 +1,21 @@
 {
+  "id": "/",
   "name": "Spendly - Daily Spending Allowance",
   "short_name": "Spendly",
   "description": "Set what you have and how long it has to last. Spendly works out what you can spend today, and recalculates every morning.",
+  "lang": "en",
+  "dir": "ltr",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
   "orientation": "portrait",
+  "categories": [
+    "finance",
+    "productivity",
+    "lifestyle"
+  ],
   "icons": [
     {
       "src": "/icon.svg",
@@ -27,14 +36,26 @@
       "short_name": "Add",
       "description": "Log a spend without opening the app first",
       "url": "/?add=1",
-      "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [
+        {
+          "src": "/icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
     },
     {
       "name": "Insights",
       "short_name": "Insights",
       "description": "Review spending history and pace",
       "url": "/insights",
-      "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [
+        {
+          "src": "/icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
     }
   ]
 }
