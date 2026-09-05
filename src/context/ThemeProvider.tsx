@@ -12,20 +12,23 @@ const ThemeContext = createContext<ThemeContextType>({
   toggleTheme: () => {},
 });
 
+/*
+ * The `dark` class is applied by the boot script in the root layout, before the
+ * first paint. This provider only tracks the value so the toggle can render the
+ * right icon.
+ *
+ * It used to hide the whole tree behind `visibility: hidden` until it mounted,
+ * which meant every byte the server sent -- headline, copy, the lot -- arrived
+ * invisible. That is a page with no readable content for anything that does not
+ * execute JavaScript, and it delayed the largest paint for everything that does.
+ */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('spendly-theme') as 'light' | 'dark' | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setTheme('dark');
-      document.documentElement.classList.add('dark');
-    }
-    setMounted(true);
+    // Read back whatever the boot script already resolved, so the two can never
+    // disagree about the current theme.
+    setTheme(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
   }, []);
 
   const toggleTheme = () => {
@@ -34,10 +37,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('spendly-theme', nextTheme);
     document.documentElement.classList.toggle('dark', nextTheme === 'dark');
   };
-
-  if (!mounted) {
-    return <div style={{ visibility: 'hidden' }}>{children}</div>;
-  }
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
