@@ -128,3 +128,33 @@
 .session-restoring [data-landing-boot] {
   display: none;
 }
+
+/*
+ * Entrance animation for the landing page.
+ *
+ * This lives in CSS rather than in Framer Motion's `initial` prop because that
+ * prop writes `opacity: 0` straight into the server HTML -- so the headline, the
+ * pitch and the product preview all arrived hidden to anything that reads the
+ * markup without executing it. As a keyframe the resting state is visible and
+ * only the animation starts from nothing.
+ */
+@keyframes spendly-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: spendly-rise 0.5s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+  }
+}
