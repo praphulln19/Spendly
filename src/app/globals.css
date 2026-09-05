@@ -107,3 +107,54 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(140, 140, 140, 0.5);
 }
+
+/*
+ * Pre-paint session swap.
+ *
+ * The server sends the landing page to every visitor so there is real HTML for
+ * crawlers and link previews to read. The boot script in the root layout sets
+ * `session-restoring` on <html> before the first paint when a stored Supabase
+ * token exists, and these two rules swap the landing markup for the boot
+ * spinner without touching the React tree.
+ */
+[data-session-splash] {
+  display: none;
+}
+
+.session-restoring [data-session-splash] {
+  display: flex;
+}
+
+.session-restoring [data-landing-boot] {
+  display: none;
+}
+
+/*
+ * Entrance animation for the landing page.
+ *
+ * This lives in CSS rather than in Framer Motion's `initial` prop because that
+ * prop writes `opacity: 0` straight into the server HTML -- so the headline, the
+ * pitch and the product preview all arrived hidden to anything that reads the
+ * markup without executing it. As a keyframe the resting state is visible and
+ * only the animation starts from nothing.
+ */
+@keyframes spendly-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: spendly-rise 0.5s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+  }
+}

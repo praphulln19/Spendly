@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
 import {
   AlertCircle,
   CalendarRange,
@@ -20,7 +19,7 @@ import { supabase } from '../lib/supabase';
 import { useTheme } from '../context/ThemeProvider';
 import { SpendlyMark } from './SpendlyMark';
 import { DayStrip } from './DayStrip';
-import { addDays, todayISO, type DayCell } from '../utils/allowance';
+import { addDays, type DayCell } from '../utils/allowance';
 
 /*
  * The signed-out page.
@@ -37,8 +36,19 @@ const DEMO_RATIOS = [
 ];
 const DEMO_TODAY_INDEX = 14;
 
+/*
+ * A fixed month, not one anchored to the real date.
+ *
+ * This page is prerendered, so a today-relative strip would bake the build day's
+ * dates into the HTML and disagree with whatever the browser computes on the day
+ * someone actually visits -- a hydration mismatch that throws the whole preview
+ * away and re-renders it. It also makes the strip agree with the "1 to 31 Aug"
+ * label the card next to it has always shown.
+ */
+const DEMO_PERIOD_START = '2025-08-01';
+
 function buildDemoCells(): DayCell[] {
-  const start = addDays(todayISO(), -DEMO_TODAY_INDEX);
+  const start = DEMO_PERIOD_START;
   return Array.from({ length: 31 }, (_, index) => {
     const ratio = DEMO_RATIOS[index] ?? 0;
     const state: DayCell['state'] =
@@ -96,7 +106,6 @@ export function LandingPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { theme, toggleTheme } = useTheme();
-  const reduceMotion = useReducedMotion();
 
   const handleOAuthSignIn = async (provider: 'google' | 'github') => {
     setLoading(provider);
@@ -113,15 +122,6 @@ export function LandingPage() {
       setLoading(null);
     }
   };
-
-  const rise = (delay: number) =>
-    reduceMotion
-      ? {}
-      : {
-          initial: { opacity: 0, y: 14 },
-          animate: { opacity: 1, y: 0 },
-          transition: { duration: 0.5, delay, ease: 'easeOut' as const },
-        };
 
   const AuthButtons = () => (
     <div className="flex flex-col sm:flex-row gap-3 max-w-lg">
@@ -173,7 +173,7 @@ export function LandingPage() {
       <main className="max-w-6xl mx-auto px-5 sm:px-8 pb-24">
         {/* Hero: the pitch on the left, the product itself on the right */}
         <section className="grid lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-14 items-center pt-8 lg:pt-16">
-          <motion.div {...rise(0)}>
+          <div className="rise">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400 mb-5">
               Daily spending allowance
             </p>
@@ -199,10 +199,10 @@ export function LandingPage() {
             <p className="mt-4 text-xs text-neutral-400 font-medium">
               Free, and no password to set. Sign in and set a budget in under a minute.
             </p>
-          </motion.div>
+          </div>
 
           {/* Product preview: the figure lives here, clearly framed as the app */}
-          <motion.div {...rise(0.12)} className="relative">
+          <div className="rise relative" style={{ animationDelay: '120ms' }}>
             <div className="apple-card shadow-xl">
               <div className="flex items-baseline justify-between gap-4 mb-4">
                 <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-400">
@@ -244,11 +244,11 @@ export function LandingPage() {
             <p className="mt-3 text-center text-[11px] font-semibold text-neutral-400">
               A preview, with sample figures
             </p>
-          </motion.div>
+          </div>
         </section>
 
         {/* The mechanic, shown rather than claimed */}
-        <motion.section {...rise(0.05)} className="mt-20 lg:mt-28">
+        <section className="rise mt-20 lg:mt-28" style={{ animationDelay: '50ms' }}>
           <h2 className="text-2xl sm:text-3xl font-black font-display tracking-tight text-neutral-900 dark:text-white max-w-2xl text-balance">
             Every bar is a day. You can see why today came out low.
           </h2>
@@ -260,7 +260,7 @@ export function LandingPage() {
           <div className="apple-card mt-7">
             <DayStrip cells={buildDemoCells()} />
           </div>
-        </motion.section>
+        </section>
 
         {/* Features */}
         <section className="mt-20 lg:mt-28">
