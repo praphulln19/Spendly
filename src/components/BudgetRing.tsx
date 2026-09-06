@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { AlertTriangle, CheckCircle2, PiggyBank, SlidersHorizontal, Target } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, PiggyBank, SlidersHorizontal } from 'lucide-react';
+import { SpendlyAppIcon } from './SpendlyMark';
 import type { Allowance } from '../utils/allowance';
 import { formatPeriodLabel } from '../utils/allowance';
 import { formatMoney } from '../utils/format';
@@ -20,9 +21,9 @@ export function BudgetRing({ allowance, onOpenSetBudget }: BudgetRingProps) {
   if (!allowance) {
     return (
       <div className="apple-card flex flex-col justify-center items-center text-center min-h-[260px]">
-        <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-3">
-          <Target className="w-6 h-6" />
-        </div>
+        <span className="mb-3 inline-flex w-12 h-12 shrink-0 rounded-[23.4%] shadow-md ring-1 ring-inset ring-black/5 dark:ring-white/15">
+          <SpendlyAppIcon className="w-full h-full" />
+        </span>
         <h3 className="text-sm font-bold text-neutral-900 dark:text-white mb-1">No budget running</h3>
         <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-xs mb-4">
           Set an amount and a window to start tracking.
