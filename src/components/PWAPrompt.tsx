@@ -168,7 +168,8 @@ export function PWAPrompt() {
                 <div className="flex items-center gap-2 p-2.5 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-semibold">
                   <Share className="w-4 h-4 shrink-0" />
                   <span>
-                    Tap the <strong>Share</strong> button in Safari, then select <strong>'Add to Home Screen'</strong>.
+                    Tap the <strong>Share</strong> button in Safari, then select{' '}
+                    <strong>&lsquo;Add to Home Screen&rsquo;</strong>.
                   </span>
                 </div>
                 <div className="flex justify-end">
