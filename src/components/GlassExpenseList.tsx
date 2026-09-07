@@ -142,8 +142,6 @@ export function GlassExpenseList({
     const Icon = categoryIcons[exp.category] || fallbackCategoryIcon;
     const isDeleting = deletingId === exp.id;
     const title = expenseTitle(exp);
-    // The title falls back to the category, so repeating it below adds nothing.
-    const meta = title === exp.category ? exp.type : `${exp.category} · ${exp.type}`;
 
     return (
       <motion.div
