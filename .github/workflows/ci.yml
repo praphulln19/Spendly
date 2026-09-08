@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `npm ci` rather than `npm install` so a lockfile that has drifted out of
+      # sync with package.json fails here instead of silently resolving.
+      - run: npm ci
+
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+      - run: npm run build
+        env:
+          # `next build` prerenders the routes, which pulls in the Supabase
+          # client at module scope, and createClient throws on an empty URL.
+          # Nothing is contacted during the build, so placeholders are enough to
+          # prove the bundle compiles. Real values live in Vercel.
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
