@@ -9,8 +9,6 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { useSession } from '../context/SessionProvider';
 import {
   createBudgetPeriod,
@@ -66,7 +64,8 @@ type ExpenseStore = {
   stash: (amount: number) => Promise<void>;
 
   exportCSV: (rows?: Expense[]) => void;
-  exportPDF: (rows?: Expense[]) => void;
+  /** Async because the PDF engine is fetched on demand rather than bundled */
+  exportPDF: (rows?: Expense[]) => Promise<void>;
 };
 
 const ExpenseContext = createContext<ExpenseStore | null>(null);
@@ -382,45 +381,64 @@ function useExpenseData(): ExpenseStore {
     [expenses]
   );
 
+  /*
+   * jsPDF and its autotable plugin are ~320 KB together -- the largest thing in
+   * the app by some distance, and needed only by the handful of people who ever
+   * tap Export. Imported at module scope they landed in the first-load bundle of
+   * every route, so a visitor who never signed in still paid for the whole PDF
+   * engine before the landing page could paint. Fetched here instead, on the tap
+   * that actually needs them.
+   */
   const exportPDF = useCallback(
-    (rows: Expense[] = expenses) => {
+    async (rows: Expense[] = expenses) => {
       if (rows.length === 0) return;
 
-      const doc = new jsPDF();
-      const generatedOn = todayISO();
-      const totalSpent = rows.reduce((total, exp) => total + exp.amount, 0);
+      try {
+        const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+          import('jspdf'),
+          import('jspdf-autotable'),
+        ]);
 
-      doc.setFontSize(18);
-      doc.setFont('helvetica', 'bold');
-      doc.text('SPENDLY - EXPENSE STATEMENT', 14, 20);
+        const doc = new jsPDF();
+        const generatedOn = todayISO();
+        const totalSpent = rows.reduce((total, exp) => total + exp.amount, 0);
 
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Generated on: ${generatedOn}`, 14, 27);
-      doc.text(
-        `Total Transactions: ${rows.length}  |  Total Spent: INR ${totalSpent.toLocaleString('en-IN')}`,
-        14,
-        33
-      );
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.text('SPENDLY - EXPENSE STATEMENT', 14, 20);
 
-      autoTable(doc, {
-        startY: 40,
-        head: [['Date', 'Category', 'Description', 'Type', 'Amount']],
-        body: rows.map((exp) => [
-          exp.date,
-          exp.category,
-          expenseTitle(exp),
-          exp.type,
-          `INR ${exp.amount.toLocaleString('en-IN')}`,
-        ]),
-        theme: 'striped',
-        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255], fontStyle: 'bold' },
-        styles: { fontSize: 9, cellPadding: 3 },
-        foot: [['', '', 'Total', '', `INR ${totalSpent.toLocaleString('en-IN')}`]],
-        footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
-      });
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Generated on: ${generatedOn}`, 14, 27);
+        doc.text(
+          `Total Transactions: ${rows.length}  |  Total Spent: INR ${totalSpent.toLocaleString('en-IN')}`,
+          14,
+          33
+        );
 
-      doc.save(`Spendly_Expenses_${generatedOn}.pdf`);
+        autoTable(doc, {
+          startY: 40,
+          head: [['Date', 'Category', 'Description', 'Type', 'Amount']],
+          body: rows.map((exp) => [
+            exp.date,
+            exp.category,
+            expenseTitle(exp),
+            exp.type,
+            `INR ${exp.amount.toLocaleString('en-IN')}`,
+          ]),
+          theme: 'striped',
+          headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255], fontStyle: 'bold' },
+          styles: { fontSize: 9, cellPadding: 3 },
+          foot: [['', '', 'Total', '', `INR ${totalSpent.toLocaleString('en-IN')}`]],
+          footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+        });
+
+        doc.save(`Spendly_Expenses_${generatedOn}.pdf`);
+      } catch {
+        // Almost always the chunk failing to arrive: the export is the one part
+        // of the app that cannot work offline until it has been fetched once.
+        setError('Could not build the PDF. If you are offline, the export needs a connection the first time.');
+      }
     },
     [expenses]
   );
