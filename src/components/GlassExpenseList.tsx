@@ -221,7 +221,7 @@ export function GlassExpenseList({
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Both filters use the app's own picker, never a native select */}
             <PickerMenu
               value={selectedCategory}
@@ -247,26 +247,33 @@ export function GlassExpenseList({
               className="shrink-0"
             />
 
-            {onExportCSV && (
-              <button
-                onClick={() => onExportCSV(filteredExpenses)}
-                aria-label="Download shown expenses as CSV"
-                title="Download shown expenses as CSV"
-                className="w-10 h-10 shrink-0 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08] text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white flex items-center justify-center transition-colors"
-              >
-                <Download className="w-4 h-4" />
-              </button>
-            )}
+            {/* Kept together and pushed right, so when the row wraps on a phone
+                they land as one cluster against the card edge rather than the
+                second one falling off it. */}
+            {(onExportCSV || onExportPDF) && (
+              <div className="flex items-center gap-2 ml-auto">
+                {onExportCSV && (
+                  <button
+                    onClick={() => onExportCSV(filteredExpenses)}
+                    aria-label="Download shown expenses as CSV"
+                    title="Download shown expenses as CSV"
+                    className="w-10 h-10 shrink-0 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08] text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white flex items-center justify-center transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                  </button>
+                )}
 
-            {onExportPDF && (
-              <button
-                onClick={() => onExportPDF(filteredExpenses)}
-                aria-label="Download shown expenses as PDF"
-                title="Download shown expenses as PDF"
-                className="w-10 h-10 shrink-0 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08] text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white flex items-center justify-center transition-colors"
-              >
-                <FileText className="w-4 h-4" />
-              </button>
+                {onExportPDF && (
+                  <button
+                    onClick={() => onExportPDF(filteredExpenses)}
+                    aria-label="Download shown expenses as PDF"
+                    title="Download shown expenses as PDF"
+                    className="w-10 h-10 shrink-0 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08] text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white flex items-center justify-center transition-colors"
+                  >
+                    <FileText className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
