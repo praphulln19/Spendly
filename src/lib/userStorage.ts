@@ -42,6 +42,31 @@ export function removeScoped(userId: string | null, key: string): void {
   }
 }
 
+/*
+ * The theme and the install-prompt cooldown belong to the device rather than to
+ * an account, so they sit outside the namespace -- but they still go through
+ * here. Reading localStorage throws outright, not just returns null, when a
+ * browser has site data blocked, and these two are touched from a render effect
+ * where an exception takes the surrounding component down with it.
+ */
+export function readLocal(key: string): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+export function writeLocal(key: string, value: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Storage disabled or full. Not worth breaking a theme toggle over.
+  }
+}
+
 /** Wipe every namespaced key. Called on sign-out so nothing leaks to the next user. */
 export function clearAllScoped(): void {
   if (typeof window === 'undefined') return;
