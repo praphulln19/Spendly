@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, X, Share, CheckCircle2 } from 'lucide-react';
 import { SpendlyMark } from './SpendlyMark';
+import { readLocal, writeLocal } from '../lib/userStorage';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -59,7 +60,7 @@ export function PWAPrompt() {
     setIsIOS(isIosDevice);
 
     // 5. Check if dismissed recently
-    const lastDismissed = localStorage.getItem('spendly_pwa_prompt_dismissed');
+    const lastDismissed = readLocal('spendly_pwa_prompt_dismissed');
     if (lastDismissed) {
       const dismissedTime = parseInt(lastDismissed, 10);
       const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
@@ -117,7 +118,7 @@ export function PWAPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    localStorage.setItem('spendly_pwa_prompt_dismissed', Date.now().toString());
+    writeLocal('spendly_pwa_prompt_dismissed', Date.now().toString());
   };
 
   // Only render on mobile devices and when prompt is triggered
