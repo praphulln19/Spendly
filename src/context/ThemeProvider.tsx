@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { writeLocal } from '../lib/userStorage';
 
 type ThemeContextType = {
   theme: 'light' | 'dark';
@@ -34,7 +35,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const toggleTheme = () => {
     const nextTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(nextTheme);
-    localStorage.setItem('spendly-theme', nextTheme);
+    writeLocal('spendly-theme', nextTheme);
     document.documentElement.classList.toggle('dark', nextTheme === 'dark');
   };
 
