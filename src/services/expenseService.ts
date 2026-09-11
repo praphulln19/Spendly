@@ -143,6 +143,13 @@ export async function updateBudgetPeriod(
     if (error.code === '23P01') {
       throw new Error('That date range overlaps a budget you have already set.');
     }
+    // 23514 here is budget_periods_stash_within_amount: the amount was pulled
+    // below what is already in the piggy bank. The form checks this first, so
+    // reaching it means another caller did not -- either way, a PostgrestError
+    // is an Error subclass and its raw text would otherwise be rendered as-is.
+    if (error.code === '23514') {
+      throw new Error('That amount is lower than the money you have set aside. Take some back out of savings first.');
+    }
     throw error;
   }
 
