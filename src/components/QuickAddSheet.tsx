@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Delete, X, MessageSquarePlus, Calendar, ChevronDown, Check, Tag } from 'lucide-react';
 import {
@@ -61,6 +61,18 @@ export function QuickAddSheet({ isOpen, onClose, onAdd, todayBudget }: QuickAddS
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /*
+   * The Save button is disabled while a write is in flight, but the Enter key
+   * bypasses it: the listener stays attached, and the sheet stays open, until
+   * onAdd resolves. Two quick presses used to mean two expenses, each with its
+   * own generated id, so the queue's replay idempotency could not merge them.
+   *
+   * A ref rather than the `saving` state because submit is memoised without it,
+   * and reading it there would see the value from the render that made the
+   * callback rather than the current one.
+   */
+  const savingRef = useRef(false);
+
   const amount = Number(digits || '0');
   const hasAmount = amount > 0;
   const valid = hasAmount && category !== null;
@@ -78,6 +90,7 @@ export function QuickAddSheet({ isOpen, onClose, onAdd, todayBudget }: QuickAddS
     setPickingCategory(false);
     setError(null);
     setSaving(false);
+    savingRef.current = false;
   }, [isOpen]);
 
   const press = useCallback((key: string) => {
@@ -98,6 +111,7 @@ export function QuickAddSheet({ isOpen, onClose, onAdd, todayBudget }: QuickAddS
   };
 
   const submit = useCallback(async () => {
+    if (savingRef.current) return;
     if (!hasAmount) {
       setError('Enter an amount first.');
       return;
@@ -107,6 +121,7 @@ export function QuickAddSheet({ isOpen, onClose, onAdd, todayBudget }: QuickAddS
       setPickingCategory(true);
       return;
     }
+    savingRef.current = true;
     setSaving(true);
     setError(null);
     try {
@@ -114,6 +129,7 @@ export function QuickAddSheet({ isOpen, onClose, onAdd, todayBudget }: QuickAddS
       onClose();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not save that expense.');
+      savingRef.current = false;
       setSaving(false);
     }
   }, [hasAmount, date, category, note, amount, type, onAdd, onClose]);
