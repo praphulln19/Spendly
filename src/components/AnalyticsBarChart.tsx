@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { TrendingUp, Calendar, LineChart } from 'lucide-react';
 import type { Expense } from '../types/expense';
 import { getMonthKey, getExpensesForMonth } from '../utils/budgetUtils';
+import { addDays, toISODate, todayISO } from '../utils/allowance';
 import { formatMoney } from '../utils/format';
 
 /*
@@ -52,19 +53,47 @@ export function AnalyticsBarChart({
     return acc;
   }, {});
 
-  const chartData = Object.keys(byDate)
-    .sort()
-    .slice(-7)
-    .map((date) => ({
+  /*
+   * A contiguous run of calendar days, not just the days that happen to have
+   * expenses on them.
+   *
+   * Taking the last seven *keys* of byDate skipped quiet days entirely, so a
+   * month with four scattered purchases drew them shoulder to shoulder as though
+   * they were consecutive, and the average below divided by the number of days
+   * spent on rather than the number of days elapsed. Someone who spent 3,000
+   * across three days of a month was told their average was 1,000 a day.
+   */
+  const monthStart = `${selectedMonthKey}-01`;
+  const [monthYear, monthIndex] = selectedMonthKey.split('-').map(Number);
+  const monthEnd = toISODate(new Date(monthYear, monthIndex, 0));
+  const today = todayISO();
+
+  // The current month runs up to today; a finished one ends on its last day with
+  // activity, so reviewing March does not open on an empty final week.
+  const lastActive = Object.keys(byDate).sort().at(-1);
+  const anchor =
+    today >= monthStart && today <= monthEnd ? today : today < monthStart ? monthStart : lastActive ?? monthEnd;
+
+  const windowDays: string[] = [];
+  for (let offset = 6; offset >= 0; offset -= 1) {
+    const date = addDays(anchor, -offset);
+    if (date >= monthStart) windowDays.push(date);
+  }
+
+  const chartData = windowDays.map((date) => {
+    const day = byDate[date] ?? { need: 0, want: 0 };
+    return {
       date,
       label: `${date.slice(8, 10)}/${date.slice(5, 7)}`,
-      need: byDate[date].need,
-      want: byDate[date].want,
-      total: byDate[date].need + byDate[date].want,
-    }));
+      need: day.need,
+      want: day.want,
+      total: day.need + day.want,
+    };
+  });
 
   const maxAmount = Math.max(...chartData.map((d) => d.total), 100);
   const periodTotal = chartData.reduce((sum, d) => sum + d.total, 0);
+  // Divided by every day on screen, quiet ones included, so "a day" means a day.
   const avgDaily = chartData.length > 0 ? Math.round(periodTotal / chartData.length) : 0;
 
   const width = 340;
@@ -116,7 +145,9 @@ export function AnalyticsBarChart({
         </div>
       </div>
 
-      {chartData.length === 0 ? (
+      {/* Keyed off the month having no expenses at all, since the window itself
+          is now always populated -- a run of quiet days is a real answer. */}
+      {monthExpenses.length === 0 ? (
         <div className="text-center py-12 text-neutral-400 my-auto">
           <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
           <p className="text-xs font-medium">Add expenses to see the daily split.</p>
