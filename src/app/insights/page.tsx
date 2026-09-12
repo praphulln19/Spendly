@@ -85,9 +85,12 @@ function InsightsView() {
             <span className="px-2 font-bold font-display text-[11px] whitespace-nowrap">
               {formatMonthLabel(monthKey)}
             </span>
+            {/* Zero-padded YYYY-MM keys order lexicographically, so this is just
+                a string compare. Stops the arrow paging into empty future months. */}
             <button
               onClick={() => setMonthKey(getNextMonthKey(monthKey))}
-              className="p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+              disabled={monthKey >= currentMonthKey}
+              className="p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
               aria-label="Next month"
             >
               <ChevronRight className="w-3.5 h-3.5" />
