@@ -92,6 +92,17 @@ export function PeriodSetupModal({
       setError('The end date has to be on or after the start date.');
       return;
     }
+    /*
+     * The database enforces stashed <= amount, but its check constraint comes
+     * back as raw Postgres text that names the constraint rather than the way
+     * out. Caught here so the message can point at the piggy bank below.
+     */
+    if (existing && amount < existing.stashed) {
+      setError(
+        `That is less than the ${formatMoney(existing.stashed)} you have put aside. Take some back out of savings first.`
+      );
+      return;
+    }
 
     setSaving(true);
     setError(null);
@@ -104,13 +115,20 @@ export function PeriodSetupModal({
     }
   };
 
-  const handleStash = async () => {
+  /*
+   * `direction` is what makes the piggy bank a two-way door. Money could only
+   * ever go in, and the amount cannot be edited below what is already stashed,
+   * so putting too much aside used to leave the budget stuck at its current size
+   * with no way to shrink it.
+   */
+  const handleStash = async (direction: 1 | -1) => {
     const value = Number(stashInput);
     if (!onStash || !Number.isFinite(value) || value <= 0) return;
     setSaving(true);
     try {
-      await onStash(value);
+      await onStash(value * direction);
       setStashInput('');
+      setError(null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not move that to savings.');
     } finally {
@@ -275,11 +293,19 @@ export function PeriodSetupModal({
                   />
                   <button
                     type="button"
-                    onClick={handleStash}
+                    onClick={() => handleStash(1)}
                     disabled={saving || !stashInput}
                     className="btn-secondary shrink-0 disabled:opacity-40"
                   >
-                    Save it
+                    Put in
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleStash(-1)}
+                    disabled={saving || !stashInput || existing.stashed <= 0}
+                    className="btn-secondary shrink-0 disabled:opacity-40"
+                  >
+                    Take out
                   </button>
                 </div>
               </div>
