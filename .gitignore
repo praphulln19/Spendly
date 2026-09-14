@@ -18,3 +18,8 @@ Thumbs.db
 .vscode/
 .claude/
 *.swp
+
+# Local working notes (not for the repo)
+instruction.md
+memory.md
+documentation.md
