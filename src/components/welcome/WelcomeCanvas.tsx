@@ -40,7 +40,12 @@ export function WelcomeCanvas() {
 
       <Suspense fallback={null}>
         <MoneyOrbit scale={isCompact ? 0.72 : 1} position={isCompact ? [0, 1.1, 0] : [0, 0, 0]} />
-        <Environment preset="city" />
+        {/*
+         * Self-hosted rather than drei's `preset="city"`, which fetches this
+         * same file from a third-party GitHub-raw CDN at runtime -- one fewer
+         * external DNS/TLS hop, served from our own domain/CDN instead.
+         */}
+        <Environment files="/hdri/potsdamer_platz_1k.hdr" />
         <EffectComposer>
           <Bloom intensity={0.55} luminanceThreshold={0.35} luminanceSmoothing={0.3} mipmapBlur />
           <Vignette eskil={false} offset={0.15} darkness={0.85} />
