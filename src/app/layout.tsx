@@ -109,10 +109,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </ExpenseProvider>
           </SessionProvider>
         </ThemeProvider>
+        {/* Analytics is not needed for anything on screen, so it loads last: after
+            everything else, during idle time, never competing with real work. */}
         <Script
           src="https://cloud.umami.is/script.js"
           data-website-id="39202846-ccbc-419f-8dd1-1dc5aa8c802f"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
       </body>
     </html>
