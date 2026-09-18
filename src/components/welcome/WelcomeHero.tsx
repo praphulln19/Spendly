@@ -11,15 +11,60 @@ const WelcomeCanvas = dynamic(() => import('./WelcomeCanvas'), {
   loading: () => null,
 });
 
+/*
+ * Gates the 3D scene's mount (and therefore the dynamic import that fetches
+ * three.js/@react-three/*, by far the heaviest JS this route loads) behind an
+ * idle callback, so the hero text and CTA paint first instead of competing
+ * with that fetch/parse/WebGL-init on the main thread. Safari has no
+ * requestIdleCallback, hence the timeout fallback.
+ */
+function useDeferredMount() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    // `typeof` rather than `'requestIdleCallback' in window`: the DOM lib
+    // types it as always present, which makes TS narrow the Safari fallback
+    // branch below to `never` if the check is written as an `in` test.
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(() => setReady(true), { timeout: 1500 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(() => setReady(true), 200);
+    return () => window.clearTimeout(id);
+  }, []);
+
+  return ready;
+}
+
 function LiveClock() {
   const [time, setTime] = useState<string | null>(null);
 
   useEffect(() => {
     const format = () =>
       new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    setTime(format());
-    const id = setInterval(() => setTime(format()), 1000);
-    return () => clearInterval(id);
+
+    let id: number | undefined;
+    // A background tab has no reason to re-render every second; the interval
+    // is dropped on hide and the display catches back up on return.
+    const startTicking = () => {
+      setTime(format());
+      id = window.setInterval(() => setTime(format()), 1000);
+    };
+    const stopTicking = () => {
+      if (id !== undefined) window.clearInterval(id);
+      id = undefined;
+    };
+    const handleVisibility = () => {
+      if (document.hidden) stopTicking();
+      else startTicking();
+    };
+
+    startTicking();
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      stopTicking();
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, []);
 
   // Reserve the width so the clock mounting client-side doesn't shift the layout.
@@ -36,6 +81,8 @@ const fadeUp = {
 };
 
 export function WelcomeHero() {
+  const showCanvas = useDeferredMount();
+
   return (
     <div className={`${spaceGrotesk.variable} relative min-h-[100svh] w-full overflow-hidden bg-black text-[#f5f5f7]`}>
       {/* Faint structural grid, matching the reference's instrument-panel feel */}
@@ -48,9 +95,7 @@ export function WelcomeHero() {
         }}
       />
 
-      <div className="absolute inset-0">
-        <WelcomeCanvas />
-      </div>
+      <div className="absolute inset-0">{showCanvas && <WelcomeCanvas />}</div>
 
       {/* Overlay UI sits above the canvas; pointer-events re-enabled only on interactive bits */}
       <div className="pointer-events-none relative z-10 flex min-h-[100svh] flex-col px-5 py-5 sm:px-8 sm:py-6 lg:px-12 lg:py-8">
